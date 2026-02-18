@@ -1,0 +1,353 @@
+// Схема БД для маркетплейса услуг города
+// Маркетплейс для поиска исполнителей: репетиторы, сантехники, тренеры и т.д.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum Role {
+  CLIENT   // Клиент, ищет исполнителей
+  EXECUTOR // Исполнитель, предоставляет услуги
+  ADMIN    // Администратор платформы
+}
+
+enum ModerationStatus {
+  PENDING  // На проверке
+  APPROVED // Одобрена
+  REJECTED // Отклонена
+}
+
+enum PriceType {
+  FIXED      // Фиксированная цена
+  FROM       // От N рублей
+  RANGE      // Диапазон от N до M
+  NEGOTIABLE // По договорённости
+}
+
+enum OrderStatus {
+  NEW         // Новая заявка
+  DISCUSSION  // Обсуждение условий
+  ACCEPTED    // Принята исполнителем
+  IN_PROGRESS // В работе
+  COMPLETED   // Выполнена
+  CANCELLED   // Отменена
+  DISPUTED    // Спор
+}
+
+enum NotificationType {
+  NEW_ORDER     // Новая заявка на услугу
+  NEW_MESSAGE   // Новое сообщение в чате
+  NEW_REVIEW    // Новый отзыв
+  ORDER_STATUS  // Смена статуса заявки
+  TASK_RESPONSE // Отклик на задание
+  SYSTEM        // Системное уведомление
+}
+
+enum TaskStatus {
+  ACTIVE      // Активное задание
+  IN_PROGRESS // Исполнитель выбран
+  COMPLETED   // Задание выполнено
+  CANCELLED   // Отменено
+}
+
+enum Plan {
+  FREE     // Бесплатный план
+  PRO      // Про-план
+  BUSINESS // Бизнес-план
+}
+
+// ============================================================
+// MODELS
+// ============================================================
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  phone        String?  @unique
+  passwordHash String?
+  name         String
+  avatarUrl    String?
+  role         Role     @default(CLIENT)
+  city         String   @default("Вологда")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Связи
+  executorProfile ExecutorProfile?
+  orders          Order[]          @relation("ClientOrders")
+  reviews         Review[]         @relation("ReviewAuthor")
+  favorites       Favorite[]
+  tasks           Task[]
+  sentMessages    ChatMessage[]
+  notifications   Notification[]
+
+  @@map("users")
+}
+
+model ExecutorProfile {
+  id               String           @id @default(uuid())
+  userId           String           @unique
+  description      String?          @db.VarChar(2000)
+  experienceYears  Int              @default(0)
+  district         String?          // Район города
+  worksOnline      Boolean          @default(false)
+  travelsToClient  Boolean          @default(true)
+  isVerified       Boolean          @default(false)
+  isPro            Boolean          @default(false)
+  ratingAvg        Float            @default(0)
+  reviewsCount     Int              @default(0)
+  viewsCount       Int              @default(0)
+  isPublished      Boolean          @default(false)
+  moderationStatus ModerationStatus @default(PENDING)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  // Связи
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categories    ExecutorCategory[]
+  services      Service[]
+  portfolio     Portfolio[]
+  certificates  Certificate[]
+  reviews       Review[]
+  orders        Order[]
+  schedule      Schedule[]
+  subscription  Subscription?
+  taskResponses TaskResponse[]
+  favorites     Favorite[]
+
+  @@map("executor_profiles")
+}
+
+model Category {
+  id       String  @id @default(uuid())
+  name     String
+  slug     String  @unique
+  icon     String  // Название иконки Lucide React, например "GraduationCap"
+  parentId String? // Null для корневых категорий
+  order    Int     @default(0)
+
+  // Самоссылка для подкатегорий
+  parent    Category?          @relation("CategoryChildren", fields: [parentId], references: [id])
+  children  Category[]         @relation("CategoryChildren")
+  executors ExecutorCategory[]
+  services  Service[]
+  tasks     Task[]
+
+  @@map("categories")
+}
+
+/// Связь M:N между исполнителями и категориями
+model ExecutorCategory {
+  executorId String
+  categoryId String
+
+  executor ExecutorProfile @relation(fields: [executorId], references: [id], onDelete: Cascade)
+  category Category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([executorId, categoryId])
+  @@map("executor_categories")
+}
+
+model Service {
+  id          String    @id @default(uuid())
+  executorId  String
+  categoryId  String
+  name        String
+  description String?
+  priceFrom   Int       // Цена в копейках
+  priceTo     Int?      // Верхняя граница цены в копейках (для RANGE)
+  priceType   PriceType @default(FROM)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  executor ExecutorProfile @relation(fields: [executorId], references: [id], onDelete: Cascade)
+  category Category        @relation(fields: [categoryId], references: [id])
+  orders   Order[]
+
+  @@map("services")
+}
+
+model Portfolio {
+  id          String   @id @default(uuid())
+  executorId  String
+  imageUrl    String
+  description String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  executor ExecutorProfile @relation(fields: [executorId], references: [id], onDelete: Cascade)
+
+  @@map("portfolio")
+}
+
+model Certificate {
+  id         String   @id @default(uuid())
+  executorId String
+  imageUrl   String
+  title      String
+  isVerified Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  executor ExecutorProfile @relation(fields: [executorId], references: [id], onDelete: Cascade)
+
+  @@map("certificates")
+}
+
+model Review {
+  id                String    @id @default(uuid())
+  clientId          String
+  executorId        String
+  orderId           String    @unique // Один отзыв на один заказ
+  rating            Int       // Общая оценка 1-5
+  qualityRating     Int       // Качество работы 1-5
+  punctualityRating Int       // Пунктуальность 1-5
+  valueRating       Int       // Соотношение цена/качество 1-5
+  politenessRating  Int       // Вежливость 1-5
+  text              String    @db.VarChar(1000)
+  photos            String[]  // Массив URL фотографий к отзыву
+  executorReply     String?   // Ответ исполнителя на отзыв
+  executorReplyAt   DateTime?
+  isModerated       Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+
+  client   User            @relation("ReviewAuthor", fields: [clientId], references: [id])
+  executor ExecutorProfile @relation(fields: [executorId], references: [id])
+  order    Order           @relation(fields: [orderId], references: [id])
+
+  @@map("reviews")
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  clientId    String
+  executorId  String
+  serviceId   String?
+  description String      @db.Text
+  budget      Int?        // Бюджет в копейках
+  status      OrderStatus @default(NEW)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  client   User            @relation("ClientOrders", fields: [clientId], references: [id])
+  executor ExecutorProfile @relation(fields: [executorId], references: [id])
+  service  Service?        @relation(fields: [serviceId], references: [id])
+  messages ChatMessage[]
+  review   Review?
+
+  @@map("orders")
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid())
+  orderId   String
+  senderId  String
+  text      String   @db.Text
+  imageUrl  String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  order  Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  sender User  @relation(fields: [senderId], references: [id])
+
+  @@map("chat_messages")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  link      String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+/// Задание от клиента (обратный поиск исполнителя)
+model Task {
+  id          String     @id @default(uuid())
+  clientId    String
+  categoryId  String
+  title       String
+  description String     @db.Text
+  budget      Int?       // Бюджет в копейках
+  district    String?    // Желаемый район
+  status      TaskStatus @default(ACTIVE)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  client    User           @relation(fields: [clientId], references: [id])
+  category  Category       @relation(fields: [categoryId], references: [id])
+  responses TaskResponse[]
+
+  @@map("tasks")
+}
+
+/// Отклик исполнителя на задание клиента
+model TaskResponse {
+  id         String   @id @default(uuid())
+  taskId     String
+  executorId String
+  message    String   @db.Text
+  price      Int      // Предлагаемая цена в копейках
+  createdAt  DateTime @default(now())
+
+  task     Task            @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  executor ExecutorProfile @relation(fields: [executorId], references: [id])
+
+  @@map("task_responses")
+}
+
+model Subscription {
+  id         String   @id @default(uuid())
+  executorId String   @unique
+  plan       Plan     @default(FREE)
+  startedAt  DateTime @default(now())
+  expiresAt  DateTime
+  isActive   Boolean  @default(true)
+
+  executor ExecutorProfile @relation(fields: [executorId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model Favorite {
+  id         String   @id @default(uuid())
+  userId     String
+  executorId String
+  createdAt  DateTime @default(now())
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  executor ExecutorProfile @relation(fields: [executorId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, executorId])
+  @@map("favorites")
+}
+
+model Schedule {
+  id          String  @id @default(uuid())
+  executorId  String
+  dayOfWeek   Int     // 0 = Воскресенье, 1 = Понедельник, ..., 6 = Суббота
+  startTime   String  // Формат "09:00"
+  endTime     String  // Формат "18:00"
+  isAvailable Boolean @default(true)
+
+  executor ExecutorProfile @relation(fields: [executorId], references: [id], onDelete: Cascade)
+
+  @@map("schedules")
+}
