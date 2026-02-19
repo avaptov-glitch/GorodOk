@@ -60,10 +60,16 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     // При первом входе копируем кастомные поля из user в токен
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id
         token.role = user.role
+      }
+      // Обновляем lastSeenAt при логине
+      if (trigger === 'signIn' && token.id) {
+        prisma.user
+          .update({ where: { id: token.id as string }, data: { lastSeenAt: new Date() } })
+          .catch(() => {})
       }
       return token
     },

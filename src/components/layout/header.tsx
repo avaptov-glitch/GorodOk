@@ -1,14 +1,44 @@
 import Link from 'next/link'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Search } from 'lucide-react'
 import { UserNav } from './user-nav'
 import { MobileNav } from './mobile-nav'
+import { NotificationsBell } from './notifications-bell'
+import type { NotificationItem } from './notifications-bell'
 
 export async function Header() {
   const session = await getServerSession(authOptions)
+
+  // Получаем уведомления для авторизованного пользователя
+  let notifications: NotificationItem[] = []
+  let unreadCount = 0
+
+  if (session?.user?.id) {
+    const [raw, totalUnread] = await Promise.all([
+      prisma.notification.findMany({
+        where: { userId: session.user.id },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }),
+      prisma.notification.count({
+        where: { userId: session.user.id, isRead: false },
+      }),
+    ])
+    notifications = raw.map((n) => ({
+      id: n.id,
+      title: n.title,
+      body: n.body,
+      link: n.link,
+      isRead: n.isRead,
+      createdAt: n.createdAt.toISOString(),
+      type: n.type,
+    }))
+    unreadCount = totalUnread
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 shadow-sm">
@@ -45,10 +75,13 @@ export async function Header() {
           </Button>
         </nav>
 
-        {/* Авторизация + мобильное меню */}
-        <div className="flex items-center gap-3">
+        {/* Авторизация + уведомления + мобильное меню */}
+        <div className="flex items-center gap-2">
           {session ? (
-            <UserNav user={session.user} />
+            <>
+              <NotificationsBell notifications={notifications} unreadCount={unreadCount} />
+              <UserNav user={session.user} />
+            </>
           ) : (
             <>
               <Button variant="outline" asChild className="hidden sm:inline-flex text-base">

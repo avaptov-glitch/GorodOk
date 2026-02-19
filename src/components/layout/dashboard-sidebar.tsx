@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
@@ -66,6 +67,28 @@ const roleLabels: Record<string, string> = {
 export function DashboardSidebar() {
   const { data: session } = useSession()
   const pathname = usePathname()
+  const [unreadChatCount, setUnreadChatCount] = useState(0)
+
+  // Polling непрочитанных сообщений каждые 10 секунд
+  useEffect(() => {
+    if (!session?.user?.id) return
+
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch('/api/chat/unread')
+        const data = await res.json()
+        if (typeof data.count === 'number') {
+          setUnreadChatCount(data.count)
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    fetchUnread()
+    const interval = setInterval(fetchUnread, 10000)
+    return () => clearInterval(interval)
+  }, [session?.user?.id])
 
   if (!session) return null
 
@@ -90,6 +113,8 @@ export function DashboardSidebar() {
         {menuItems.map(({ href, label, icon: Icon }) => {
           // Считаем ссылку активной если путь совпадает или начинается с href
           const isActive = pathname === href || pathname.startsWith(href + '/')
+          const isChatLink = href === '/dashboard/chat'
+
           return (
             <Link
               key={href}
@@ -102,7 +127,12 @@ export function DashboardSidebar() {
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />
-              {label}
+              <span className="flex-1">{label}</span>
+              {isChatLink && unreadChatCount > 0 && (
+                <span className="flex items-center justify-center min-w-[20px] h-5 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold px-1.5">
+                  {unreadChatCount > 99 ? '99+' : unreadChatCount}
+                </span>
+              )}
             </Link>
           )
         })}

@@ -62,7 +62,7 @@ export type ExecutorCardData = {
 
 // Исполнитель с полными данными для страницы профиля
 export type ExecutorProfileFull = ExecutorProfile & {
-  user: Pick<User, 'name' | 'avatarUrl' | 'city'>
+  user: Pick<User, 'name' | 'avatarUrl' | 'city' | 'lastSeenAt'>
   categories: Array<{ category: Pick<Category, 'name' | 'slug' | 'icon'> }>
   services: Service[]
   portfolio: Portfolio[]

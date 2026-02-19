@@ -31,6 +31,7 @@ enum PriceType {
   FROM       // От N рублей
   RANGE      // Диапазон от N до M
   NEGOTIABLE // По договорённости
+  PER_HOUR   // Цена за час
 }
 
 enum OrderStatus {
@@ -79,6 +80,7 @@ model User {
   role         Role     @default(CLIENT)
   city         String   @default("Вологда")
   isActive     Boolean  @default(true)
+  lastSeenAt   DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -100,17 +102,19 @@ model ExecutorProfile {
   description      String?          @db.VarChar(2000)
   experienceYears  Int              @default(0)
   district         String?          // Район города
-  worksOnline      Boolean          @default(false)
-  travelsToClient  Boolean          @default(true)
-  isVerified       Boolean          @default(false)
+  worksOnline       Boolean          @default(false)
+  travelsToClient   Boolean          @default(true)
+  acceptsAtOwnPlace Boolean          @default(false)
+  isVerified        Boolean          @default(false)
   isPro            Boolean          @default(false)
   ratingAvg        Float            @default(0)
   reviewsCount     Int              @default(0)
   viewsCount       Int              @default(0)
   isPublished      Boolean          @default(false)
-  moderationStatus ModerationStatus @default(PENDING)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  moderationStatus  ModerationStatus @default(PENDING)
+  rejectionReason   String?          // Причина отклонения модерации
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
   // Связи
   user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -233,6 +237,7 @@ model Order {
   clientId    String
   executorId  String
   serviceId   String?
+  taskId      String?     // Ссылка на задание, если заказ создан из него
   description String      @db.Text
   budget      Int?        // Бюджет в копейках
   status      OrderStatus @default(NEW)
@@ -242,6 +247,7 @@ model Order {
   client   User            @relation("ClientOrders", fields: [clientId], references: [id])
   executor ExecutorProfile @relation(fields: [executorId], references: [id])
   service  Service?        @relation(fields: [serviceId], references: [id])
+  task     Task?           @relation(fields: [taskId], references: [id])
   messages ChatMessage[]
   review   Review?
 
@@ -294,6 +300,7 @@ model Task {
   client    User           @relation(fields: [clientId], references: [id])
   category  Category       @relation(fields: [categoryId], references: [id])
   responses TaskResponse[]
+  orders    Order[]
 
   @@map("tasks")
 }
@@ -304,7 +311,7 @@ model TaskResponse {
   taskId     String
   executorId String
   message    String   @db.Text
-  price      Int      // Предлагаемая цена в копейках
+  price      Int?     // Предлагаемая цена в копейках (опционально)
   createdAt  DateTime @default(now())
 
   task     Task            @relation(fields: [taskId], references: [id], onDelete: Cascade)

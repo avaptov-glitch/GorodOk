@@ -48,10 +48,30 @@ export async function registerUser(
     // Хешируем пароль (cost factor 12 — баланс безопасности и скорости)
     const passwordHash = await hash(password, 12)
 
-    // Создаём пользователя
-    const user = await prisma.user.create({
-      data: { name, email, passwordHash, role },
-      select: { id: true },
+    // Создаём пользователя (+ профиль и подписку для исполнителей) в транзакции
+    const user = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: { name, email, passwordHash, role },
+        select: { id: true },
+      })
+
+      // Для исполнителей создаём ExecutorProfile и бесплатную подписку
+      if (role === 'EXECUTOR') {
+        const profile = await tx.executorProfile.create({
+          data: { userId: newUser.id },
+          select: { id: true },
+        })
+
+        await tx.subscription.create({
+          data: {
+            executorId: profile.id,
+            plan: 'FREE',
+            expiresAt: new Date('2099-12-31'),
+          },
+        })
+      }
+
+      return newUser
     })
 
     return { success: true, data: { id: user.id } }

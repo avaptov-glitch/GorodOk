@@ -63,15 +63,17 @@ export function UserNav({ user }: UserNavProps) {
             Личный кабинет
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link
-            href="/dashboard/client/settings"
-            className="flex items-center gap-2 cursor-pointer"
-          >
-            <Settings className="h-4 w-4" />
-            Настройки
-          </Link>
-        </DropdownMenuItem>
+        {user.role === 'CLIENT' && (
+          <DropdownMenuItem asChild>
+            <Link
+              href="/dashboard/client/settings"
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <Settings className="h-4 w-4" />
+              Настройки
+            </Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive"
