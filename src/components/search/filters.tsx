@@ -15,7 +15,13 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SlidersHorizontal, X } from 'lucide-react'
+
+const CITIES = [
+  { value: 'Вологда', label: 'Вологда' },
+  { value: 'Череповец', label: 'Череповец' },
+]
 
 interface FiltersProps {
   districts: string[]
@@ -34,6 +40,7 @@ const EXPERIENCE_OPTIONS = [
 ]
 
 const FILTER_KEYS = [
+  'city',
   'rating',
   'priceFrom',
   'priceTo',
@@ -96,6 +103,39 @@ function FiltersContent({ districts }: FiltersProps) {
           </Button>
         )}
       </div>
+
+      {/* City */}
+      <div>
+        <p className="text-sm font-medium mb-2.5">Город</p>
+        <Select
+          value={searchParams.get('city') ?? ''}
+          onValueChange={(v) => updateParam('city', v || null)}
+        >
+          <SelectTrigger className="h-8 text-sm">
+            <SelectValue placeholder="Все города" />
+          </SelectTrigger>
+          <SelectContent>
+            {CITIES.map((c) => (
+              <SelectItem key={c.value} value={c.value}>
+                {c.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {searchParams.get('city') && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => updateParam('city', null)}
+            className="text-muted-foreground h-6 px-1.5 mt-1 text-xs"
+          >
+            <X className="h-3 w-3 mr-0.5" />
+            Сбросить
+          </Button>
+        )}
+      </div>
+
+      <Separator />
 
       {/* Rating */}
       <div>

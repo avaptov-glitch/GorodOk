@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
-import { Badge } from '@/components/ui/badge'
 import {
   GraduationCap, Dumbbell, Hammer, Car, Monitor, Sparkles, Home,
   Scale, PartyPopper, PawPrint, BookOpen, Languages, Music, School,
@@ -12,6 +11,7 @@ import {
   type LucideProps,
 } from 'lucide-react'
 import { type ComponentType } from 'react'
+import { Badge } from '@/components/ui/badge'
 
 export const metadata: Metadata = {
   title: 'Категории услуг',
@@ -19,7 +19,6 @@ export const metadata: Metadata = {
     'Найдите нужного специалиста по категории — репетиторы, мастера, тренеры и сотни других профессионалов.',
 }
 
-// Маппинг имён иконок на компоненты Lucide
 const ICON_MAP: Record<string, ComponentType<LucideProps>> = {
   GraduationCap, Dumbbell, Hammer, Car, Monitor, Sparkles, Home,
   Scale, PartyPopper, PawPrint, BookOpen, Languages, Music, School,
@@ -50,50 +49,45 @@ export default async function CategoriesPage() {
   })
 
   return (
-    <div className="container mx-auto px-4 py-10">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">Все категории услуг</h1>
-        <p className="text-muted-foreground">Выберите нужное направление и найдите специалиста</p>
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-foreground mb-1">Категории услуг</h1>
+        <p className="text-sm text-muted-foreground">Выберите направление и найдите специалиста</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {categories.map((cat) => (
-          <div key={cat.id} className="bg-card border border-border rounded-xl p-6 shadow-sm">
+          <div key={cat.id} className="bg-card border border-border rounded-lg p-4 hover:border-primary/30 transition-colors">
             {/* Заголовок категории */}
             <Link
               href={`/category/${cat.slug}`}
-              className="flex items-center gap-3 mb-4 group"
+              className="flex items-center gap-2.5 mb-3 group"
             >
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
-                <CategoryIcon name={cat.icon} className="h-6 w-6 text-primary" />
+              <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0 group-hover:bg-primary/10 transition-colors">
+                <CategoryIcon name={cat.icon} className="h-4.5 w-4.5 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
-              <div>
-                <h2 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors">
+              <div className="min-w-0">
+                <h2 className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors truncate">
                   {cat.name}
                 </h2>
-                <span className="text-sm text-muted-foreground">
-                  {cat._count.executors > 0
-                    ? `${cat._count.executors} исполнителей`
-                    : 'Нет исполнителей'}
-                </span>
+                {cat._count.executors > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {cat._count.executors} исполн.
+                  </span>
+                )}
               </div>
             </Link>
 
             {/* Подкатегории */}
             {cat.children.length > 0 && (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5 pl-[46px]">
                 {cat.children.map((sub) => (
                   <Link key={sub.id} href={`/category/${sub.slug}`}>
                     <Badge
-                      variant="secondary"
-                      className="cursor-pointer hover:bg-primary/10 hover:text-primary transition-colors text-sm py-1 px-3 font-normal"
+                      variant="outline"
+                      className="cursor-pointer text-xs py-0.5 px-2 font-normal text-foreground/60 border-transparent hover:bg-amber-500 hover:text-white hover:border-amber-500 transition-colors"
                     >
                       {sub.name}
-                      {sub._count.executors > 0 && (
-                        <span className="ml-1.5 text-xs opacity-60">
-                          {sub._count.executors}
-                        </span>
-                      )}
                     </Badge>
                   </Link>
                 ))}

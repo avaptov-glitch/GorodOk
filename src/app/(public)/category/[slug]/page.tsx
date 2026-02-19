@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
 import { ExecutorCard } from '@/components/executor/executor-card'
-import { Filters } from '@/components/search/filters'
+import { CategoryFilters } from '@/components/search/category-filters'
 import { SortDropdown } from '@/components/search/sort-dropdown'
 import { EmptyState } from '@/components/common/empty-state'
 import {
@@ -25,6 +25,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
 type SearchParams = {
   sort?: string
+  city?: string
   rating?: string
   priceFrom?: string
   priceTo?: string
@@ -46,6 +47,10 @@ function buildWhere(categoryIds: string[], params: SearchParams) {
     categories: {
       some: { categoryId: { in: categoryIds } },
     },
+  }
+
+  if (params.city) {
+    where.user = { city: params.city }
   }
 
   if (params.rating) {
@@ -339,7 +344,7 @@ export default async function CategoryPage({
             <Link key={sub.id} href={`/category/${sub.slug}`}>
               <Badge
                 variant="outline"
-                className="cursor-pointer hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors text-sm py-1.5 px-3 font-normal"
+                className="cursor-pointer border-transparent text-foreground/60 hover:bg-amber-500 hover:text-white hover:border-amber-500 transition-colors text-sm py-1.5 px-3 font-normal"
               >
                 {sub.name}
               </Badge>
@@ -351,7 +356,7 @@ export default async function CategoryPage({
       <div className="flex gap-6 items-start">
         {/* Фильтры (сайдбар / мобильный Sheet) */}
         <Suspense>
-          <Filters districts={districts} />
+          <CategoryFilters categorySlug={category.slug} districts={districts} />
         </Suspense>
 
         {/* Основной контент */}

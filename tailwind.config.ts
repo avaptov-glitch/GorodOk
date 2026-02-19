@@ -10,7 +10,6 @@ const config: Config = {
   theme: {
   	extend: {
   		colors: {
-  			// shadcn/ui токены (обязательны для работы компонентов)
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {
@@ -51,8 +50,6 @@ const config: Config = {
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
   			},
-  			// Кастомная палитра дизайн-системы маркетплейса
-  			// Используй как: bg-brand-primary, text-brand-secondary и т.д.
   			brand: {
   				primary: '#2563EB',
   				'primary-dark': '#1D4ED8',
@@ -63,8 +60,8 @@ const config: Config = {
   				error: '#EF4444',
   				'text-primary': '#0F172A',
   				'text-secondary': '#64748B',
-  				border: '#E2E8F0',
-  			},
+  				border: '#E2E8F0'
+  			}
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
@@ -72,8 +69,35 @@ const config: Config = {
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		fontFamily: {
-  			sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+  			sans: [
+  				'Inter',
+  				'ui-sans-serif',
+  				'system-ui',
+  				'sans-serif'
+  			]
   		},
+  		keyframes: {
+  			'accordion-down': {
+  				from: {
+  					height: '0'
+  				},
+  				to: {
+  					height: 'var(--radix-accordion-content-height)'
+  				}
+  			},
+  			'accordion-up': {
+  				from: {
+  					height: 'var(--radix-accordion-content-height)'
+  				},
+  				to: {
+  					height: '0'
+  				}
+  			}
+  		},
+  		animation: {
+  			'accordion-down': 'accordion-down 0.2s ease-out',
+  			'accordion-up': 'accordion-up 0.2s ease-out'
+  		}
   	}
   },
   plugins: [require("tailwindcss-animate")],
