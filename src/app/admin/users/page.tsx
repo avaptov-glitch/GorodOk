@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import type { Metadata } from 'next'
 import { getUsers } from '@/actions/admin'
 import { UsersTable } from '@/components/admin/users-table'

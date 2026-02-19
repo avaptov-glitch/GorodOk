@@ -28,8 +28,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { createOrder } from '@/actions/orders'
 
 type ServiceOption = {
@@ -39,6 +41,7 @@ type ServiceOption = {
 
 const formSchema = z.object({
   serviceId: z.string().optional(),
+  meetingFormat: z.enum(['REMOTE', 'AT_CLIENT', 'AT_EXECUTOR']).optional(),
   description: z
     .string()
     .min(10, 'Опишите задачу подробнее (не менее 10 символов)')
@@ -68,7 +71,7 @@ export function OrderFormDialog({ executorId, executorName, services }: OrderFor
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { serviceId: '', description: '', budgetStr: '' },
+    defaultValues: { serviceId: '', meetingFormat: undefined, description: '', budgetStr: '' },
   })
 
   function onSubmit(values: FormValues) {
@@ -79,6 +82,7 @@ export function OrderFormDialog({ executorId, executorName, services }: OrderFor
         serviceId: values.serviceId || undefined,
         description: values.description,
         budget: values.budgetStr ? parseInt(values.budgetStr.trim()) : undefined,
+        meetingFormat: values.meetingFormat || undefined,
       })
 
       if (result.success) {
@@ -153,6 +157,38 @@ export function OrderFormDialog({ executorId, executorName, services }: OrderFor
                   )}
                 />
               )}
+
+              {/* Формат встречи */}
+              <FormField
+                control={form.control}
+                name="meetingFormat"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Формат (необязательно)</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="flex flex-wrap gap-3"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <RadioGroupItem value="REMOTE" id="fmt-remote" />
+                          <Label htmlFor="fmt-remote" className="font-normal text-sm cursor-pointer">Дистанционно</Label>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <RadioGroupItem value="AT_CLIENT" id="fmt-client" />
+                          <Label htmlFor="fmt-client" className="font-normal text-sm cursor-pointer">У меня</Label>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <RadioGroupItem value="AT_EXECUTOR" id="fmt-executor" />
+                          <Label htmlFor="fmt-executor" className="font-normal text-sm cursor-pointer">У специалиста</Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               {/* Описание задачи */}
               <FormField

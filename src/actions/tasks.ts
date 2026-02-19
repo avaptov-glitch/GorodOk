@@ -29,6 +29,7 @@ const CreateTaskSchema = z.object({
   categoryId: z.string().min(1, 'Выберите категорию'),
   budget: z.number().int().positive('Бюджет должен быть положительным').optional(),
   district: z.string().optional(),
+  meetingFormat: z.enum(['REMOTE', 'AT_CLIENT', 'AT_EXECUTOR']).optional(),
 })
 
 export type CreateTaskInput = z.infer<typeof CreateTaskSchema>
@@ -55,7 +56,7 @@ export async function createTask(
     return { success: false, error: firstError }
   }
 
-  const { title, description, categoryId, budget, district } = parsed.data
+  const { title, description, categoryId, budget, district, meetingFormat } = parsed.data
 
   if (containsContactInfo(title) || containsContactInfo(description)) {
     return {
@@ -81,6 +82,7 @@ export async function createTask(
         description,
         budget: budget ? budget * 100 : null, // Рубли → копейки
         district: district || null,
+        meetingFormat: meetingFormat ?? null,
       },
       select: { id: true },
     })
@@ -203,7 +205,7 @@ export async function respondToTask(
           link: `/task/${taskId}`,
         },
       })
-      .catch(() => {})
+      .catch((e) => console.error('Failed to create task response notification:', e))
 
     revalidatePath(`/task/${taskId}`)
     revalidatePath('/tasks')
@@ -350,7 +352,7 @@ export async function selectExecutor(
           link: '/dashboard/executor/orders',
         },
       })
-      .catch(() => {})
+      .catch((e) => console.error('Failed to create executor selection notification:', e))
 
     revalidatePath(`/task/${taskId}`)
     revalidatePath('/tasks')

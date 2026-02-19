@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
@@ -88,10 +90,20 @@ function buildWhere(categoryIds: string[], params: SearchParams) {
   // Фильтр по цене услуг (в рублях → переводим в копейки)
   if (params.priceFrom || params.priceTo) {
     const servicePriceFilter: Record<string, unknown> = { isActive: true }
-    if (params.priceFrom) servicePriceFilter.priceFrom = { gte: parseInt(params.priceFrom) * 100 }
-    if (params.priceTo) servicePriceFilter.priceFrom = {
-      ...(servicePriceFilter.priceFrom as Record<string, unknown>),
-      lte: parseInt(params.priceTo) * 100,
+    if (params.priceFrom) {
+      servicePriceFilter.priceFrom = { gte: parseInt(params.priceFrom) * 100 }
+    }
+    if (params.priceTo) {
+      const priceToCents = parseInt(params.priceTo) * 100
+      servicePriceFilter.priceFrom = {
+        ...(servicePriceFilter.priceFrom as Record<string, unknown> || {}),
+        lte: priceToCents,
+      }
+      // Если у услуги задана верхняя граница цены — она тоже должна быть в бюджете
+      servicePriceFilter.OR = [
+        { priceTo: null },
+        { priceTo: { lte: priceToCents } },
+      ]
     }
     where.services = { some: servicePriceFilter }
   }
@@ -242,8 +254,18 @@ export default async function CategoryPage({
       orderBy,
       skip,
       take: PAGE_SIZE,
-      include: {
-        user: { select: { name: true, avatarUrl: true } },
+      select: {
+        id: true,
+        ratingAvg: true,
+        reviewsCount: true,
+        isVerified: true,
+        isPro: true,
+        district: true,
+        worksOnline: true,
+        acceptsAtOwnPlace: true,
+        travelsToClient: true,
+        avgResponseTimeMinutes: true,
+        user: { select: { name: true, avatarUrl: true, lastSeenAt: true } },
         categories: {
           include: { category: { select: { name: true } } },
         },
@@ -394,6 +416,7 @@ export default async function CategoryPage({
                     worksOnline={executor.worksOnline}
                     acceptsAtOwnPlace={executor.acceptsAtOwnPlace}
                     travelsToClient={executor.travelsToClient}
+                    avgResponseTimeMinutes={executor.avgResponseTimeMinutes}
                     services={executor.services}
                     categories={executor.categories}
                     portfolio={executor.portfolio}

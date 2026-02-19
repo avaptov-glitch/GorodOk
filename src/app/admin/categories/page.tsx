@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import type { Metadata } from 'next'
 import { getCategories } from '@/actions/admin'
 import { CategoriesManager } from '@/components/admin/categories-manager'

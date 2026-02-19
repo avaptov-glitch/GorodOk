@@ -40,7 +40,7 @@ export type ChatMessageItem = {
 const SendMessageSchema = z.object({
   orderId: z.string().min(1),
   text: z.string().min(1, 'Сообщение не может быть пустым').max(2000, 'Слишком длинное сообщение'),
-  imageUrl: z.string().optional(),
+  imageUrl: z.string().url().optional(),
 })
 
 // --- Хелпер: проверка участия в заказе ---
@@ -116,7 +116,7 @@ export async function sendMessage(
           link: `/dashboard/chat?order=${orderId}`,
         },
       })
-      .catch(() => {})
+      .catch((e) => console.error('Failed to create message notification:', e))
 
     revalidatePath('/dashboard/chat')
     return { success: true, data: { id: message.id } }

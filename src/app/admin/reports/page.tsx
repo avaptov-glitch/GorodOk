@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import type { Metadata } from 'next'
 import { getReportedReviews, getDisputedOrders } from '@/actions/admin'
 import { ReportsManager } from '@/components/admin/reports-manager'

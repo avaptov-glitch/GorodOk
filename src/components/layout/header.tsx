@@ -18,26 +18,30 @@ export async function Header() {
   let unreadCount = 0
 
   if (session?.user?.id) {
-    const [raw, totalUnread] = await Promise.all([
-      prisma.notification.findMany({
-        where: { userId: session.user.id },
-        orderBy: { createdAt: 'desc' },
-        take: 10,
-      }),
-      prisma.notification.count({
-        where: { userId: session.user.id, isRead: false },
-      }),
-    ])
-    notifications = raw.map((n) => ({
-      id: n.id,
-      title: n.title,
-      body: n.body,
-      link: n.link,
-      isRead: n.isRead,
-      createdAt: n.createdAt.toISOString(),
-      type: n.type,
-    }))
-    unreadCount = totalUnread
+    try {
+      const [raw, totalUnread] = await Promise.all([
+        prisma.notification.findMany({
+          where: { userId: session.user.id },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+        }),
+        prisma.notification.count({
+          where: { userId: session.user.id, isRead: false },
+        }),
+      ])
+      notifications = raw.map((n) => ({
+        id: n.id,
+        title: n.title,
+        body: n.body,
+        link: n.link,
+        isRead: n.isRead,
+        createdAt: n.createdAt.toISOString(),
+        type: n.type,
+      }))
+      unreadCount = totalUnread
+    } catch (error) {
+      console.error('Failed to fetch notifications in Header:', error)
+    }
   }
 
   return (

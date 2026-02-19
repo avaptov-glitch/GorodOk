@@ -436,15 +436,20 @@ export async function resolveDispute(
     link: `/dashboard/client/orders`,
   }
 
-  await prisma.notification.createMany({
-    data: [
-      { ...notificationData, userId: order.clientId },
-      { ...notificationData, userId: (await prisma.executorProfile.findUnique({
-        where: { id: order.executorId },
-        select: { userId: true },
-      }))!.userId },
-    ],
+  const executorProfile = await prisma.executorProfile.findUnique({
+    where: { id: order.executorId },
+    select: { userId: true },
   })
+
+  const notifications: { userId: string; type: 'SYSTEM'; title: string; body: string; link: string }[] = [
+    { ...notificationData, userId: order.clientId },
+  ]
+
+  if (executorProfile) {
+    notifications.push({ ...notificationData, userId: executorProfile.userId })
+  }
+
+  await prisma.notification.createMany({ data: notifications })
 
   revalidatePath('/admin/reports')
   return { success: true }

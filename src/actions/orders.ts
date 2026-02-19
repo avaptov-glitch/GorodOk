@@ -16,6 +16,7 @@ const CreateOrderSchema = z.object({
     .min(10, 'Описание должно содержать не менее 10 символов')
     .max(1000, 'Описание слишком длинное (не более 1000 символов)'),
   budget: z.number().int().positive('Бюджет должен быть положительным числом').optional(),
+  meetingFormat: z.enum(['REMOTE', 'AT_CLIENT', 'AT_EXECUTOR']).optional(),
 })
 
 export type CreateOrderInput = z.infer<typeof CreateOrderSchema>
@@ -43,7 +44,7 @@ export async function createOrder(
     return { success: false, error: firstError }
   }
 
-  const { executorId, serviceId, taskId, description, budget } = parsed.data
+  const { executorId, serviceId, taskId, description, budget, meetingFormat } = parsed.data
 
   // Проверяем существование и доступность исполнителя
   const executor = await prisma.executorProfile.findUnique({
@@ -68,6 +69,7 @@ export async function createOrder(
         taskId: taskId ?? null,
         description,
         budget: budget ? budget * 100 : null, // Рубли → копейки
+        meetingFormat: meetingFormat ?? null,
       },
       select: { id: true },
     })
@@ -83,7 +85,7 @@ export async function createOrder(
           link: '/dashboard/executor/orders',
         },
       })
-      .catch(() => {})
+      .catch((e) => console.error('Failed to create order notification:', e))
 
     revalidatePath(`/executor/${executorId}`)
     revalidatePath('/dashboard/client/orders')
@@ -173,6 +175,27 @@ export async function updateOrderStatus(
   try {
     await prisma.order.update({ where: { id: orderId }, data: { status } })
 
+    // Отслеживаем среднее время ответа исполнителя (NEW → ACCEPTED/DISCUSSION)
+    if (isExecutor && order.status === 'NEW' && (status === 'ACCEPTED' || status === 'DISCUSSION')) {
+      const responseMinutes = Math.round(
+        (Date.now() - order.createdAt.getTime()) / 60000
+      )
+      const profile = await prisma.executorProfile.findUnique({
+        where: { userId: session.user.id },
+        select: { avgResponseTimeMinutes: true },
+      })
+      const curr = profile?.avgResponseTimeMinutes
+      const newAvg = curr != null
+        ? Math.round((curr + responseMinutes) / 2)
+        : responseMinutes
+      prisma.executorProfile
+        .update({
+          where: { userId: session.user.id },
+          data: { avgResponseTimeMinutes: newAvg },
+        })
+        .catch((e) => console.error('Failed to update avgResponseTimeMinutes:', e))
+    }
+
     // Уведомляем вторую сторону
     const notifyUserId = isExecutor ? order.clientId : order.executor.userId
     prisma.notification
@@ -185,7 +208,7 @@ export async function updateOrderStatus(
           link: isExecutor ? '/dashboard/client/orders' : '/dashboard/executor/orders',
         },
       })
-      .catch(() => {})
+      .catch((e) => console.error('Failed to create status notification:', e))
 
     revalidatePath('/dashboard/executor/orders')
     revalidatePath('/dashboard/client/orders')

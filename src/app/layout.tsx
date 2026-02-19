@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import localFont from 'next/font/local'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 import { Providers } from '@/components/providers'
 import { Toaster } from '@/components/ui/toaster'
 import './globals.css'
@@ -51,6 +52,11 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'ГородОк',
+  },
 }
 
 export default async function RootLayout({
@@ -58,6 +64,13 @@ export default async function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   // Pre-fetch сессии на сервере, чтобы SessionProvider получил её сразу без лишнего запроса
   const session = await getServerSession(authOptions)
+
+  // Обновляем lastSeenAt для отслеживания онлайн-статуса (fire-and-forget)
+  if (session?.user?.id) {
+    prisma.user
+      .update({ where: { id: session.user.id }, data: { lastSeenAt: new Date() } })
+      .catch(() => {})
+  }
 
   return (
     <html lang="ru">

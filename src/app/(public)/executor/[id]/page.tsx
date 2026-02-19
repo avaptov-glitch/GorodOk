@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
@@ -15,6 +17,7 @@ import {
   ChevronRight,
   Eye,
   ImageOff,
+  Zap,
 } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { ru } from 'date-fns/locale'
@@ -258,13 +261,18 @@ export default async function ExecutorProfilePage({ params }: { params: { id: st
       <Card className="mb-6">
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row gap-6">
-            {/* Аватар */}
-            <Avatar className="h-24 w-24 shrink-0 self-start ring-2 ring-border">
-              <AvatarImage src={executor.user.avatarUrl ?? undefined} />
-              <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
+            {/* Аватар с онлайн-индикатором */}
+            <div className="relative shrink-0 self-start">
+              <Avatar className="h-24 w-24 ring-2 ring-border">
+                <AvatarImage src={executor.user.avatarUrl ?? undefined} />
+                <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              {executor.user.lastSeenAt && (Date.now() - new Date(executor.user.lastSeenAt).getTime()) / 60000 < 5 && (
+                <span className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 border-2 border-card rounded-full" />
+              )}
+            </div>
 
             {/* Основная информация */}
             <div className="flex-1 min-w-0">
@@ -281,6 +289,17 @@ export default async function ExecutorProfilePage({ params }: { params: { id: st
                 {executor.subscription?.plan === 'BUSINESS' && (
                   <Badge variant="secondary" className="shrink-0">
                     Бизнес
+                  </Badge>
+                )}
+                {executor.ratingAvg >= 4.8 && executor.reviewsCount >= 10 && (
+                  <Badge className="shrink-0 bg-amber-500/10 text-amber-700 border-amber-300 hover:bg-amber-500/20">
+                    Топ специалист
+                  </Badge>
+                )}
+                {executor.avgResponseTimeMinutes != null && executor.avgResponseTimeMinutes <= 60 && (
+                  <Badge variant="outline" className="shrink-0 text-green-700 border-green-300">
+                    <Zap className="h-3 w-3 mr-1" />
+                    Быстро отвечает
                   </Badge>
                 )}
               </div>
@@ -315,7 +334,7 @@ export default async function ExecutorProfilePage({ params }: { params: { id: st
                       />
                     ))}
                   </div>
-                  <span className="font-semibold">{executor.ratingAvg.toFixed(1)}</span>
+                  <span className="font-semibold">{executor.ratingAvg.toFixed(2)}</span>
                   <span className="text-muted-foreground text-sm">
                     {executor.reviewsCount} {pluralReviews(executor.reviewsCount)}
                   </span>
@@ -359,8 +378,16 @@ export default async function ExecutorProfilePage({ params }: { params: { id: st
                 </span>
                 {executor.user.lastSeenAt && (
                   <span className="flex items-center gap-1.5">
-                    <Clock className="h-3.5 w-3.5 shrink-0" />
-                    В сети {formatDistanceToNow(executor.user.lastSeenAt, { locale: ru, addSuffix: true })}
+                    <span className={cn(
+                      'w-2 h-2 rounded-full shrink-0',
+                      (Date.now() - new Date(executor.user.lastSeenAt).getTime()) / 60000 < 5
+                        ? 'bg-green-500'
+                        : 'bg-muted-foreground/40'
+                    )} />
+                    {(Date.now() - new Date(executor.user.lastSeenAt).getTime()) / 60000 < 5
+                      ? 'В сети'
+                      : `Был(а) ${formatDistanceToNow(executor.user.lastSeenAt, { locale: ru, addSuffix: true })}`
+                    }
                   </span>
                 )}
               </div>

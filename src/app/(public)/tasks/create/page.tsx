@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
@@ -13,7 +15,11 @@ export const metadata: Metadata = {
   description: 'Опишите задачу, и исполнители откликнутся',
 }
 
-export default async function CreateTaskPage() {
+export default async function CreateTaskPage({
+  searchParams,
+}: {
+  searchParams: { title?: string; categoryId?: string }
+}) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) {
     redirect('/login?callbackUrl=/tasks/create')
@@ -68,7 +74,11 @@ export default async function CreateTaskPage() {
       </nav>
 
       <div className="max-w-2xl mx-auto">
-        <TaskCreateForm categories={categories} />
+        <TaskCreateForm
+          categories={categories}
+          defaultTitle={searchParams.title}
+          defaultCategoryId={searchParams.categoryId}
+        />
       </div>
     </div>
   )

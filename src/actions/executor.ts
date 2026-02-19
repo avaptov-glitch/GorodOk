@@ -107,6 +107,7 @@ export type ServiceInput = z.infer<typeof ServiceSchema>
 export async function createService(data: ServiceInput): Promise<ApiResponse<{ id: string }>> {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return { success: false, error: 'Необходимо авторизоваться' }
+  if (session.user.role !== 'EXECUTOR') return { success: false, error: 'Только для исполнителей' }
 
   const executorId = await requireExecutorId(session.user.id)
   if (!executorId) return { success: false, error: 'Сначала заполните анкету исполнителя' }
@@ -139,6 +140,7 @@ export async function createService(data: ServiceInput): Promise<ApiResponse<{ i
 export async function updateService(id: string, data: ServiceInput): Promise<ApiResponse<void>> {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return { success: false, error: 'Необходимо авторизоваться' }
+  if (session.user.role !== 'EXECUTOR') return { success: false, error: 'Только для исполнителей' }
 
   const executorId = await requireExecutorId(session.user.id)
   if (!executorId) return { success: false, error: 'Профиль исполнителя не найден' }
@@ -171,6 +173,7 @@ export async function updateService(id: string, data: ServiceInput): Promise<Api
 export async function deleteService(id: string): Promise<ApiResponse<void>> {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return { success: false, error: 'Необходимо авторизоваться' }
+  if (session.user.role !== 'EXECUTOR') return { success: false, error: 'Только для исполнителей' }
 
   const executorId = await requireExecutorId(session.user.id)
   if (!executorId) return { success: false, error: 'Профиль исполнителя не найден' }
@@ -190,6 +193,7 @@ export async function toggleServiceActive(
 ): Promise<ApiResponse<void>> {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return { success: false, error: 'Необходимо авторизоваться' }
+  if (session.user.role !== 'EXECUTOR') return { success: false, error: 'Только для исполнителей' }
 
   const executorId = await requireExecutorId(session.user.id)
   if (!executorId) return { success: false, error: 'Профиль исполнителя не найден' }
@@ -213,6 +217,7 @@ export async function addPortfolioItem(
 ): Promise<ApiResponse<{ id: string }>> {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return { success: false, error: 'Необходимо авторизоваться' }
+  if (session.user.role !== 'EXECUTOR') return { success: false, error: 'Только для исполнителей' }
 
   const executorId = await requireExecutorId(session.user.id)
   if (!executorId) return { success: false, error: 'Профиль исполнителя не найден' }
@@ -245,6 +250,7 @@ export async function addPortfolioItem(
 export async function deletePortfolioItem(id: string): Promise<ApiResponse<void>> {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return { success: false, error: 'Необходимо авторизоваться' }
+  if (session.user.role !== 'EXECUTOR') return { success: false, error: 'Только для исполнителей' }
 
   const executorId = await requireExecutorId(session.user.id)
   if (!executorId) return { success: false, error: 'Профиль исполнителя не найден' }
@@ -268,6 +274,7 @@ export async function addCertificate(
 ): Promise<ApiResponse<{ id: string }>> {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return { success: false, error: 'Необходимо авторизоваться' }
+  if (session.user.role !== 'EXECUTOR') return { success: false, error: 'Только для исполнителей' }
 
   const executorId = await requireExecutorId(session.user.id)
   if (!executorId) return { success: false, error: 'Профиль исполнителя не найден' }
@@ -289,6 +296,7 @@ export async function addCertificate(
 export async function deleteCertificate(id: string): Promise<ApiResponse<void>> {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return { success: false, error: 'Необходимо авторизоваться' }
+  if (session.user.role !== 'EXECUTOR') return { success: false, error: 'Только для исполнителей' }
 
   const executorId = await requireExecutorId(session.user.id)
   if (!executorId) return { success: false, error: 'Профиль исполнителя не найден' }
@@ -320,6 +328,7 @@ export type ScheduleDayInput = z.infer<typeof ScheduleDaySchema>
 export async function saveSchedule(days: ScheduleDayInput[]): Promise<ApiResponse<void>> {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return { success: false, error: 'Необходимо авторизоваться' }
+  if (session.user.role !== 'EXECUTOR') return { success: false, error: 'Только для исполнителей' }
 
   const executorId = await requireExecutorId(session.user.id)
   if (!executorId) return { success: false, error: 'Профиль исполнителя не найден' }

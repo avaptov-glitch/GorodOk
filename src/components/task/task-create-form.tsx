@@ -26,6 +26,8 @@ import {
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { createTask } from '@/actions/tasks'
 
@@ -47,6 +49,7 @@ const formSchema = z.object({
       'Введите корректный бюджет в рублях'
     ),
   district: z.string().optional(),
+  meetingFormat: z.enum(['REMOTE', 'AT_CLIENT', 'AT_EXECUTOR']).optional(),
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -57,9 +60,11 @@ interface TaskCreateFormProps {
     name: string
     children: Array<{ id: string; name: string }>
   }>
+  defaultTitle?: string
+  defaultCategoryId?: string
 }
 
-export function TaskCreateForm({ categories }: TaskCreateFormProps) {
+export function TaskCreateForm({ categories, defaultTitle, defaultCategoryId }: TaskCreateFormProps) {
   const router = useRouter()
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -67,11 +72,12 @@ export function TaskCreateForm({ categories }: TaskCreateFormProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: '',
+      title: defaultTitle ?? '',
       description: '',
-      categoryId: '',
+      categoryId: defaultCategoryId ?? '',
       budgetStr: '',
       district: '',
+      meetingFormat: undefined,
     },
   })
 
@@ -84,6 +90,7 @@ export function TaskCreateForm({ categories }: TaskCreateFormProps) {
         categoryId: values.categoryId,
         budget: values.budgetStr ? parseInt(values.budgetStr.trim()) : undefined,
         district: values.district || undefined,
+        meetingFormat: values.meetingFormat || undefined,
       })
 
       if (result.success && result.data) {
@@ -213,6 +220,38 @@ export function TaskCreateForm({ categories }: TaskCreateFormProps) {
                       placeholder="Например: Центральный"
                       {...field}
                     />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Формат встречи */}
+            <FormField
+              control={form.control}
+              name="meetingFormat"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Формат (необязательно)</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      className="flex flex-wrap gap-4"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <RadioGroupItem value="REMOTE" id="task-fmt-remote" />
+                        <Label htmlFor="task-fmt-remote" className="font-normal cursor-pointer">Дистанционно</Label>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <RadioGroupItem value="AT_CLIENT" id="task-fmt-client" />
+                        <Label htmlFor="task-fmt-client" className="font-normal cursor-pointer">У меня</Label>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <RadioGroupItem value="AT_EXECUTOR" id="task-fmt-executor" />
+                        <Label htmlFor="task-fmt-executor" className="font-normal cursor-pointer">У специалиста</Label>
+                      </div>
+                    </RadioGroup>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

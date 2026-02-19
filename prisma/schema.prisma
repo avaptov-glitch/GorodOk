@@ -66,6 +66,12 @@ enum Plan {
   BUSINESS // Бизнес-план
 }
 
+enum MeetingFormat {
+  REMOTE       // Дистанционно
+  AT_CLIENT    // У клиента
+  AT_EXECUTOR  // У специалиста
+}
+
 // ============================================================
 // MODELS
 // ============================================================
@@ -109,8 +115,9 @@ model ExecutorProfile {
   isPro            Boolean          @default(false)
   ratingAvg        Float            @default(0)
   reviewsCount     Int              @default(0)
-  viewsCount       Int              @default(0)
-  isPublished      Boolean          @default(false)
+  viewsCount              Int              @default(0)
+  avgResponseTimeMinutes  Int?             // Среднее время ответа в минутах
+  isPublished             Boolean          @default(false)
   moderationStatus  ModerationStatus @default(PENDING)
   rejectionReason   String?          // Причина отклонения модерации
   createdAt         DateTime         @default(now())
@@ -239,8 +246,9 @@ model Order {
   serviceId   String?
   taskId      String?     // Ссылка на задание, если заказ создан из него
   description String      @db.Text
-  budget      Int?        // Бюджет в копейках
-  status      OrderStatus @default(NEW)
+  budget        Int?           // Бюджет в копейках
+  meetingFormat MeetingFormat? // Формат встречи
+  status        OrderStatus    @default(NEW)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -291,9 +299,10 @@ model Task {
   categoryId  String
   title       String
   description String     @db.Text
-  budget      Int?       // Бюджет в копейках
-  district    String?    // Желаемый район
-  status      TaskStatus @default(ACTIVE)
+  budget        Int?           // Бюджет в копейках
+  district      String?        // Желаемый район
+  meetingFormat MeetingFormat? // Формат выполнения
+  status        TaskStatus     @default(ACTIVE)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 

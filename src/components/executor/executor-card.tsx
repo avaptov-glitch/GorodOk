@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { Star, MapPin, CheckCircle, Briefcase } from 'lucide-react'
+import { Star, MapPin, CheckCircle, Briefcase, Zap } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -13,6 +13,7 @@ export interface ExecutorCardProps {
   user: {
     name: string
     avatarUrl: string | null
+    lastSeenAt?: Date | string | null
   }
   ratingAvg: number
   reviewsCount: number
@@ -22,6 +23,7 @@ export interface ExecutorCardProps {
   worksOnline: boolean
   acceptsAtOwnPlace: boolean
   travelsToClient: boolean
+  avgResponseTimeMinutes?: number | null
   services: Array<{
     name: string
     priceFrom: number
@@ -41,6 +43,11 @@ function formatPrice(priceFrom: number, priceType: PriceType): string {
   return `от ${rubles.toLocaleString('ru-RU')} ₽`
 }
 
+function isOnline(lastSeenAt: Date | string | null | undefined): boolean {
+  if (!lastSeenAt) return false
+  return (Date.now() - new Date(lastSeenAt).getTime()) / 60000 < 5
+}
+
 export function ExecutorCard({
   id,
   user,
@@ -52,6 +59,7 @@ export function ExecutorCard({
   worksOnline,
   acceptsAtOwnPlace,
   travelsToClient,
+  avgResponseTimeMinutes,
   services,
   categories,
   portfolio,
@@ -67,6 +75,10 @@ export function ExecutorCard({
     services.length > 0
       ? services.reduce((min, s) => (s.priceFrom < min.priceFrom ? s : min), services[0])
       : null
+
+  const online = isOnline(user.lastSeenAt)
+  const isTopSpecialist = ratingAvg >= 4.8 && reviewsCount >= 10
+  const respondsQuickly = avgResponseTimeMinutes != null && avgResponseTimeMinutes <= 60
 
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow duration-200 flex flex-col">
@@ -87,12 +99,17 @@ export function ExecutorCard({
         <div className="p-4 space-y-3 flex flex-col flex-1">
           {/* Header: avatar + name + rating */}
           <div className="flex items-start gap-3">
-            <Avatar className="h-12 w-12 shrink-0">
-              <AvatarImage src={user.avatarUrl ?? undefined} />
-              <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative shrink-0">
+              <Avatar className="h-12 w-12">
+                <AvatarImage src={user.avatarUrl ?? undefined} />
+                <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              {online && (
+                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-card rounded-full" />
+              )}
+            </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <h3 className="font-semibold text-foreground truncate">{user.name}</h3>
@@ -108,13 +125,29 @@ export function ExecutorCard({
                   </Badge>
                 )}
               </div>
+              {/* Trust badges */}
+              {(isTopSpecialist || respondsQuickly) && (
+                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                  {isTopSpecialist && (
+                    <Badge className="text-[10px] px-1.5 py-0 h-4 bg-amber-500/10 text-amber-700 border-amber-300 hover:bg-amber-500/20">
+                      Топ
+                    </Badge>
+                  )}
+                  {respondsQuickly && (
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 text-green-700 border-green-300">
+                      <Zap className="h-2.5 w-2.5 mr-0.5" />
+                      Быстро отвечает
+                    </Badge>
+                  )}
+                </div>
+              )}
               <p className="text-sm text-muted-foreground truncate">
                 {categories.map((c) => c.category.name).join(', ')}
               </p>
               {reviewsCount > 0 ? (
                 <div className="flex items-center gap-1 mt-0.5">
                   <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                  <span className="text-sm font-medium">{ratingAvg.toFixed(1)}</span>
+                  <span className="text-sm font-medium">{ratingAvg.toFixed(2)}</span>
                   <span className="text-sm text-muted-foreground">({reviewsCount})</span>
                 </div>
               ) : (
