@@ -8,7 +8,6 @@ import { prisma } from '@/lib/prisma'
 import { ExecutorCard } from '@/components/executor/executor-card'
 import { CategoryFilters } from '@/components/search/category-filters'
 import { SortDropdown } from '@/components/search/sort-dropdown'
-import { EmptyState } from '@/components/common/empty-state'
 import {
   Pagination,
   PaginationContent,
@@ -18,7 +17,6 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination'
-import { Badge } from '@/components/ui/badge'
 import { ChevronRight, Users } from 'lucide-react'
 import { JsonLd } from '@/components/seo/json-ld'
 
@@ -314,7 +312,7 @@ export default async function CategoryPage({
   ]
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-[#F8FAFC]">
       <JsonLd
         data={{
           '@context': 'https://schema.org',
@@ -327,115 +325,133 @@ export default async function CategoryPage({
           })),
         }}
       />
-      {/* Хлебные крошки */}
-      <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-6 flex-wrap">
-        <Link href="/" className="hover:text-foreground transition-colors">
-          Главная
-        </Link>
-        <ChevronRight className="h-3.5 w-3.5 shrink-0" />
-        <Link href="/categories" className="hover:text-foreground transition-colors">
-          Категории
-        </Link>
-        {category.parent && (
-          <>
-            <ChevronRight className="h-3.5 w-3.5 shrink-0" />
-            <Link
-              href={`/category/${category.parent.slug}`}
-              className="hover:text-foreground transition-colors"
-            >
-              {category.parent.name}
-            </Link>
-          </>
-        )}
-        <ChevronRight className="h-3.5 w-3.5 shrink-0" />
-        <span className="text-foreground font-medium">{category.name}</span>
-      </nav>
 
-      {/* Заголовок */}
-      <div className="mb-5">
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">{category.name}</h1>
-        <p className="text-muted-foreground text-sm">
-          {total > 0 ? `Найдено ${total} исполнителей` : 'Пока нет исполнителей в этой категории'}
-        </p>
-      </div>
+      {/* Premium Hero Header */}
+      <div className="bg-white border-b border-slate-200/60 pt-8 pb-10 mb-8">
+        <div className="container mx-auto px-4 max-w-[1360px]">
+          {/* Breadcrumbs */}
+          <nav className="flex items-center gap-2 text-sm font-semibold text-slate-400 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+            <Link href="/" className="hover:text-blue-600 transition-colors whitespace-nowrap">Главная</Link>
+            <ChevronRight className="h-4 w-4 shrink-0" />
+            <Link href="/categories" className="hover:text-blue-600 transition-colors whitespace-nowrap">Категории</Link>
+            {category.parent && (
+              <>
+                <ChevronRight className="h-4 w-4 shrink-0" />
+                <Link href={`/category/${category.parent.slug}`} className="hover:text-blue-600 transition-colors whitespace-nowrap">
+                  {category.parent.name}
+                </Link>
+              </>
+            )}
+            <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+            <span className="text-slate-900 whitespace-nowrap">{category.name}</span>
+          </nav>
 
-      {/* Подкатегории */}
-      {category.children.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-6">
-          {category.children.map((sub) => (
-            <Link key={sub.id} href={`/category/${sub.slug}`}>
-              <Badge
-                variant="outline"
-                className="cursor-pointer border-transparent text-foreground/60 hover:bg-amber-500 hover:text-white hover:border-amber-500 transition-colors text-sm py-1.5 px-3 font-normal"
-              >
-                {sub.name}
-              </Badge>
-            </Link>
-          ))}
-        </div>
-      )}
+          {/* Title & Stats */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+              <h1 className="text-4xl sm:text-5xl font-bold text-slate-900 tracking-[-0.03em] mb-3">
+                {category.name}
+              </h1>
+              <p className="text-lg text-slate-500 font-medium">
+                {total > 0 ? (
+                  <>Найдено <span className="text-slate-900 font-bold">{total}</span> исполнителей</>
+                ) : (
+                  'Пока нет исполнителей в этой категории'
+                )}
+              </p>
+            </div>
 
-      <div className="flex gap-6 items-start">
-        {/* Фильтры (сайдбар / мобильный Sheet) */}
-        <Suspense>
-          <CategoryFilters categorySlug={category.slug} districts={districts} />
-        </Suspense>
-
-        {/* Основной контент */}
-        <div className="flex-1 min-w-0">
-          {/* Панель: кол-во + сортировка */}
-          <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
-            <span className="text-sm text-muted-foreground">
-              {executors.length > 0 && `${executors.length} из ${total}`}
-            </span>
-            <Suspense>
-              <SortDropdown />
-            </Suspense>
-          </div>
-
-          {/* Сетка исполнителей */}
-          {executors.length === 0 ? (
-            <EmptyState
-              icon={<Users className="h-16 w-16" />}
-              title="Исполнителей не найдено"
-              description="Попробуйте изменить фильтры или выбрать другую категорию"
-            />
-          ) : (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                {executors.map((executor) => (
-                  <ExecutorCard
-                    key={executor.id}
-                    id={executor.id}
-                    user={executor.user}
-                    ratingAvg={executor.ratingAvg}
-                    reviewsCount={executor.reviewsCount}
-                    isVerified={executor.isVerified}
-                    isPro={executor.isPro}
-                    district={executor.district}
-                    worksOnline={executor.worksOnline}
-                    acceptsAtOwnPlace={executor.acceptsAtOwnPlace}
-                    travelsToClient={executor.travelsToClient}
-                    avgResponseTimeMinutes={executor.avgResponseTimeMinutes}
-                    services={executor.services}
-                    categories={executor.categories}
-                    portfolio={executor.portfolio}
-                  />
+            {/* Subcategories (Tags) */}
+            {category.children.length > 0 && (
+              <div className="flex flex-wrap gap-2 max-w-2xl justify-start md:justify-end">
+                {category.children.map((sub) => (
+                  <Link key={sub.id} href={`/category/${sub.slug}`}>
+                    <div className="text-sm font-semibold bg-slate-50 hover:bg-white text-slate-600 hover:text-blue-600 border border-slate-200/60 hover:border-blue-200 rounded-full py-2 px-4 shadow-sm hover:shadow-md ring-1 ring-slate-900/5 transition-all duration-300 cursor-pointer">
+                      {sub.name}
+                    </div>
+                  </Link>
                 ))}
               </div>
+            )}
+          </div>
+        </div>
+      </div>
 
-              {/* Пагинация */}
-              {totalPages > 1 && (
-                <div className="mt-8">
-                  <PaginationControls
-                    page={page}
-                    totalPages={totalPages}
-                    searchParams={searchParams}
-                  />
+      <div className="container mx-auto px-4 max-w-[1360px] py-4 pb-16">
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+
+          {/* Filters Sidebar */}
+          <div className="w-full lg:w-[280px] shrink-0">
+            <div className="bg-white rounded-[2rem] border border-slate-200/60 shadow-sm p-6 sticky top-6">
+              <div className="font-black text-lg text-slate-900 mb-6">
+                Фильтры
+              </div>
+              <Suspense fallback={<div className="h-[400px] bg-slate-50 animate-pulse rounded-xl"></div>}>
+                <CategoryFilters categorySlug={category.slug} districts={districts} />
+              </Suspense>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1 min-w-0">
+            {/* Meta Panel: Count + Sort */}
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6 bg-white rounded-2xl p-3 px-5 border border-slate-200/60 shadow-sm">
+              <span className="font-bold text-slate-600">
+                Показано <span className="text-slate-900">{executors.length}</span> из <span className="text-slate-900">{total}</span>
+              </span>
+              <Suspense>
+                <SortDropdown />
+              </Suspense>
+            </div>
+
+            {/* Grid */}
+            {executors.length === 0 ? (
+              <div className="bg-white rounded-[2.5rem] border border-slate-200/60 p-16 text-center shadow-sm w-full">
+                <div className="w-24 h-24 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-6 flex-shrink-0">
+                  <Users className="h-10 w-10" />
                 </div>
-              )}
-            </>
-          )}
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">Ничего не найдено</h2>
+                <p className="text-slate-500 font-medium mb-8 max-w-md mx-auto">
+                  Сбросьте фильтры или выберите другую <Link href="/categories" className="text-blue-600 hover:underline">категорию услуг</Link>.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
+                  {executors.map((executor) => (
+                    <ExecutorCard
+                      key={executor.id}
+                      id={executor.id}
+                      user={executor.user}
+                      ratingAvg={executor.ratingAvg}
+                      reviewsCount={executor.reviewsCount}
+                      isVerified={executor.isVerified}
+                      isPro={executor.isPro}
+                      district={executor.district}
+                      worksOnline={executor.worksOnline}
+                      acceptsAtOwnPlace={executor.acceptsAtOwnPlace}
+                      travelsToClient={executor.travelsToClient}
+                      avgResponseTimeMinutes={executor.avgResponseTimeMinutes}
+                      services={executor.services}
+                      categories={executor.categories}
+                      portfolio={executor.portfolio}
+                    />
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="mt-12 flex justify-center">
+                    <PaginationControls
+                      page={page}
+                      totalPages={totalPages}
+                      searchParams={searchParams}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -61,9 +61,10 @@ interface OrderFormDialogProps {
   executorId: string
   executorName: string
   services: ServiceOption[]
+  triggerClassName?: string
 }
 
-export function OrderFormDialog({ executorId, executorName, services }: OrderFormDialogProps) {
+export function OrderFormDialog({ executorId, executorName, services, triggerClassName }: OrderFormDialogProps) {
   const [open, setOpen] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -106,7 +107,7 @@ export function OrderFormDialog({ executorId, executorName, services }: OrderFor
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button size="lg" className="w-full sm:w-auto">
+        <Button size="lg" className={triggerClassName ?? "w-full sm:w-auto"}>
           Оставить заявку
         </Button>
       </DialogTrigger>

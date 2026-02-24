@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import {
   Form,
@@ -94,214 +93,228 @@ export function ProfileForm({ profile, categories }: ProfileFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         {/* === О себе === */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">О себе</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-5">
+        <div className="space-y-5">
+          <h2 className="text-xl font-extrabold text-slate-900 border-b border-slate-100 pb-3">О себе</h2>
+
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-bold text-slate-700">Описание</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Расскажите о своём опыте, подходе к работе, образовании..."
+                    rows={6}
+                    disabled={isPending}
+                    className="resize-none rounded-xl border-slate-200/60 shadow-sm focus-visible:ring-blue-500 bg-slate-50/50"
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription className="text-slate-500">
+                  До 2000 символов. Хорошее описание увеличивает количество заявок.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <FormField
               control={form.control}
-              name="description"
+              name="experienceYears"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Описание</FormLabel>
+                  <FormLabel className="text-sm font-bold text-slate-700">Опыт работы (лет)</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Расскажите о своём опыте, подходе к работе, образовании..."
-                      rows={6}
+                    <Input
+                      type="number"
+                      min={0}
+                      max={60}
                       disabled={isPending}
+                      className="rounded-xl border-slate-200/60 shadow-sm focus-visible:ring-blue-500 bg-slate-50/50"
                       {...field}
                     />
                   </FormControl>
-                  <FormDescription>
-                    До 2000 символов. Хорошее описание увеличивает количество заявок.
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="experienceYears"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Опыт работы (лет)</FormLabel>
-                    <FormControl>
-                      <Input type="number" min={0} max={60} disabled={isPending} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="district"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Район города</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Например: Заречье" disabled={isPending} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="flex flex-col gap-3 pt-1">
-              <FormField
-                control={form.control}
-                name="travelsToClient"
-                render={({ field }) => (
-                  <FormItem className="flex items-center gap-2.5 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        disabled={isPending}
-                      />
-                    </FormControl>
-                    <FormLabel className="cursor-pointer font-normal">Выезжаю к клиенту</FormLabel>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="acceptsAtOwnPlace"
-                render={({ field }) => (
-                  <FormItem className="flex items-center gap-2.5 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        disabled={isPending}
-                      />
-                    </FormControl>
-                    <FormLabel className="cursor-pointer font-normal">Принимаю у себя</FormLabel>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="worksOnline"
-                render={({ field }) => (
-                  <FormItem className="flex items-center gap-2.5 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        disabled={isPending}
-                      />
-                    </FormControl>
-                    <FormLabel className="cursor-pointer font-normal">Работаю онлайн</FormLabel>
-                  </FormItem>
-                )}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* === Категории услуг === */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Категории услуг</CardTitle>
-          </CardHeader>
-          <CardContent>
             <FormField
               control={form.control}
-              name="categoryIds"
-              render={() => (
+              name="district"
+              render={({ field }) => (
                 <FormItem>
-                  <div className="space-y-5">
-                    {parentCategories.map((parent, idx) => {
-                      const children = childrenByParent[parent.id] ?? []
-                      // Если у родителя нет детей — показываем самого родителя как вариант
-                      const items = children.length > 0 ? children : [parent]
-                      return (
-                        <div key={parent.id}>
-                          {idx > 0 && <Separator className="mb-5" />}
-                          <p className="text-sm font-semibold text-foreground mb-2.5">{parent.name}</p>
-                          <div className="grid grid-cols-2 gap-y-2 gap-x-4 pl-1">
-                            {items.map((cat) => (
-                              <FormField
-                                key={cat.id}
-                                control={form.control}
-                                name="categoryIds"
-                                render={({ field }) => (
-                                  <FormItem className="flex items-center gap-2.5 space-y-0">
-                                    <FormControl>
-                                      <Checkbox
-                                        checked={field.value.includes(cat.id)}
-                                        onCheckedChange={(checked) => {
-                                          field.onChange(
-                                            checked
-                                              ? [...field.value, cat.id]
-                                              : field.value.filter((id) => id !== cat.id)
-                                          )
-                                        }}
-                                        disabled={isPending}
-                                      />
-                                    </FormControl>
-                                    <FormLabel className="cursor-pointer font-normal text-sm leading-tight">
-                                      {cat.name}
-                                    </FormLabel>
-                                  </FormItem>
-                                )}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                  <FormMessage className="mt-3" />
+                  <FormLabel className="text-sm font-bold text-slate-700">Район города</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Например: Заречье"
+                      disabled={isPending}
+                      className="rounded-xl border-slate-200/60 shadow-sm focus-visible:ring-blue-500 bg-slate-50/50"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* === Публикация === */}
-        <Card>
-          <CardContent className="pt-6">
+          <div className="flex flex-col gap-3.5 pt-2">
             <FormField
               control={form.control}
-              name="isPublished"
+              name="travelsToClient"
               render={({ field }) => (
-                <FormItem className="flex items-start gap-3 space-y-0">
+                <FormItem className="flex items-center gap-3 space-y-0">
                   <FormControl>
                     <Checkbox
                       checked={field.value}
                       onCheckedChange={field.onChange}
                       disabled={isPending}
-                      className="mt-0.5"
+                      className="rounded text-blue-600 focus-visible:ring-blue-500 h-5 w-5 border-slate-300"
+                    />
+                  </FormControl>
+                  <FormLabel className="cursor-pointer font-semibold text-slate-700 pb-0.5">Выезжаю к клиенту</FormLabel>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="acceptsAtOwnPlace"
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      disabled={isPending}
+                      className="rounded text-blue-600 focus-visible:ring-blue-500 h-5 w-5 border-slate-300"
+                    />
+                  </FormControl>
+                  <FormLabel className="cursor-pointer font-semibold text-slate-700 pb-0.5">Принимаю у себя</FormLabel>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="worksOnline"
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      disabled={isPending}
+                      className="rounded text-blue-600 focus-visible:ring-blue-500 h-5 w-5 border-slate-300"
+                    />
+                  </FormControl>
+                  <FormLabel className="cursor-pointer font-semibold text-slate-700 pb-0.5">Работаю онлайн</FormLabel>
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
+        {/* === Категории услуг === */}
+        <div className="space-y-5 pt-4">
+          <h2 className="text-xl font-extrabold text-slate-900 border-b border-slate-100 pb-3">Категории услуг</h2>
+          <FormField
+            control={form.control}
+            name="categoryIds"
+            render={() => (
+              <FormItem>
+                <div className="space-y-6 bg-slate-50/50 p-5 rounded-2xl border border-slate-100">
+                  {parentCategories.map((parent, idx) => {
+                    const children = childrenByParent[parent.id] ?? []
+                    // Если у родителя нет детей — показываем самого родителя как вариант
+                    const items = children.length > 0 ? children : [parent]
+                    return (
+                      <div key={parent.id}>
+                        {idx > 0 && <Separator className="mb-6 border-slate-200/60" />}
+                        <p className="text-base font-extrabold text-slate-800 mb-3">{parent.name}</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-3 gap-x-6">
+                          {items.map((cat) => (
+                            <FormField
+                              key={cat.id}
+                              control={form.control}
+                              name="categoryIds"
+                              render={({ field }) => (
+                                <FormItem className="flex items-center gap-3 space-y-0">
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value.includes(cat.id)}
+                                      onCheckedChange={(checked) => {
+                                        field.onChange(
+                                          checked
+                                            ? [...field.value, cat.id]
+                                            : field.value.filter((id) => id !== cat.id)
+                                        )
+                                      }}
+                                      disabled={isPending}
+                                      className="rounded text-blue-600 focus-visible:ring-blue-500 h-5 w-5 border-slate-300 shrink-0"
+                                    />
+                                  </FormControl>
+                                  <FormLabel className="cursor-pointer font-medium text-slate-600 text-sm leading-tight pb-0.5">
+                                    {cat.name}
+                                  </FormLabel>
+                                </FormItem>
+                              )}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                <FormMessage className="mt-3" />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* === Публикация === */}
+        <div className="pt-4">
+          <div className="bg-blue-50/40 border border-blue-100/50 p-5 rounded-2xl">
+            <FormField
+              control={form.control}
+              name="isPublished"
+              render={({ field }) => (
+                <FormItem className="flex items-start gap-4 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      disabled={isPending}
+                      className="mt-1 rounded text-blue-600 focus-visible:ring-blue-500 h-5 w-5 border-blue-200"
                     />
                   </FormControl>
                   <div>
-                    <FormLabel className="cursor-pointer font-semibold">
+                    <FormLabel className="cursor-pointer font-extrabold text-blue-900 text-base">
                       Опубликовать анкету
                     </FormLabel>
-                    <FormDescription>
+                    <FormDescription className="text-blue-700/80 mt-1">
                       Ваша анкета будет отображаться в каталоге и результатах поиска
                     </FormDescription>
                   </div>
                 </FormItem>
               )}
             />
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <div className="flex justify-end">
-          <Button type="submit" disabled={isPending} size="lg">
+        <div className="flex justify-end pt-4">
+          <Button
+            type="submit"
+            disabled={isPending}
+            size="lg"
+            className="rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-500/25 px-8 h-12 text-base"
+          >
             {isPending ? (
-              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Сохранение...</>
+              <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Сохранение...</>
             ) : (
-              <><Save className="mr-2 h-4 w-4" />Сохранить анкету</>
+              <><Save className="mr-2 h-5 w-5" />Сохранить анкету</>
             )}
           </Button>
         </div>

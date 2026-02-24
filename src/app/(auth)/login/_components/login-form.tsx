@@ -7,17 +7,9 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import Link from 'next/link'
-import { Loader2 } from 'lucide-react'
+import { Loader2, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import {
   Form,
   FormControl,
@@ -35,7 +27,6 @@ const LoginSchema = z.object({
 
 type LoginInput = z.infer<typeof LoginSchema>
 
-// Маппинг кодов ошибок NextAuth на русские сообщения
 const AUTH_ERRORS: Record<string, string> = {
   CredentialsSignin: 'Неверный email или пароль',
   default: 'Произошла ошибка. Попробуйте ещё раз.',
@@ -47,7 +38,6 @@ export function LoginForm() {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
 
-  // Ошибка из URL-параметра (когда NextAuth делает redirect с ошибкой)
   const urlError = searchParams.get('error')
   const urlErrorMessage = urlError
     ? (AUTH_ERRORS[urlError] ?? AUTH_ERRORS.default)
@@ -64,7 +54,7 @@ export function LoginForm() {
       const result = await signIn('credentials', {
         email: values.email,
         password: values.password,
-        redirect: false, // Управляем редиректом вручную
+        redirect: false,
       })
 
       if (result?.error) {
@@ -73,78 +63,94 @@ export function LoginForm() {
         return
       }
 
-      // После успешного входа перенаправляем на callbackUrl или дашборд
       const callbackUrl = searchParams.get('callbackUrl') ?? '/dashboard'
       router.push(callbackUrl)
-      router.refresh() // Обновляем серверные компоненты с новой сессией
+      router.refresh()
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-2xl">Вход</CardTitle>
-        <CardDescription>Введите email и пароль для входа в аккаунт</CardDescription>
+    <div className="bg-white/70 backdrop-blur-2xl rounded-[2.5rem] p-8 sm:p-10 shadow-[0_20px_60px_rgba(0,0,0,0.05)] border border-white/60 ring-1 ring-slate-900/5 hover:shadow-[0_30px_70px_rgba(37,99,235,0.08)] hover:bg-white/90 transition-all duration-500 ease-out relative">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-slate-900 tracking-[-0.02em] mb-2">С возвращением</h1>
+        <p className="text-slate-500 font-medium">Войдите, чтобы продолжить работу</p>
         {urlErrorMessage && (
-          <p className="text-sm text-destructive mt-1">{urlErrorMessage}</p>
+          <div className="mt-4 p-3 bg-red-50 text-red-600 text-sm font-medium rounded-2xl border border-red-100">
+            {urlErrorMessage}
+          </div>
         )}
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="you@example.com"
-                      autoComplete="email"
-                      disabled={isLoading}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+      </div>
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-slate-700 font-bold ml-1">Email</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                    disabled={isLoading}
+                    className="h-14 rounded-2xl bg-slate-50/50 hover:bg-slate-50 focus:bg-white border-slate-200/60 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 transition-all px-5 text-base shadow-sm font-medium"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage className="ml-1" />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-slate-700 font-bold ml-1 flex justify-between">
+                  <span>Пароль</span>
+                  <Link href="#" className="text-blue-600 hover:text-blue-800 text-sm font-semibold transition-colors">Забыли?</Link>
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    type="password"
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    disabled={isLoading}
+                    className="h-14 rounded-2xl bg-slate-50/50 hover:bg-slate-50 focus:bg-white border-slate-200/60 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 transition-all px-5 text-base shadow-sm font-medium tracking-widest placeholder:tracking-normal"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage className="ml-1" />
+              </FormItem>
+            )}
+          />
+
+          <div className="pt-2">
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-14 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl text-lg font-bold shadow-[0_8px_20px_rgba(15,23,42,0.15)] hover:shadow-[0_12px_25px_rgba(15,23,42,0.2)] hover:-translate-y-0.5 transition-all group"
+            >
+              {isLoading ? (
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              ) : (
+                <>Войти <ArrowRight className="ml-2 w-5 h-5 opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all" /></>
               )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Пароль</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="••••••••"
-                      autoComplete="current-password"
-                      disabled={isLoading}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Войти
             </Button>
-          </form>
-        </Form>
-      </CardContent>
-      <CardFooter className="flex justify-center text-sm text-muted-foreground">
-        Нет аккаунта?&nbsp;
-        <Link href="/register" className="text-primary hover:underline font-medium">
+          </div>
+        </form>
+      </Form>
+
+      <div className="mt-8 text-center text-sm font-medium text-slate-500">
+        Ещё нет аккаунта?{' '}
+        <Link href="/register" className="text-blue-600 hover:text-blue-800 font-bold transition-colors">
           Зарегистрироваться
         </Link>
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   )
 }

@@ -184,87 +184,115 @@ export default async function TasksPage({
     .sort()
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Breadcrumbs */}
-      <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-6">
-        <Link href="/" className="hover:text-foreground transition-colors">
-          Главная
-        </Link>
-        <ChevronRight className="h-3.5 w-3.5 shrink-0" />
-        <span className="text-foreground font-medium">Доска заданий</span>
-      </nav>
+    <div className="min-h-screen bg-[#F8FAFC]">
+      {/* Premium Hero Header */}
+      <div className="bg-white border-b border-slate-200/60 pt-8 pb-10 mb-8">
+        <div className="container mx-auto px-4 max-w-[1360px]">
+          {/* Breadcrumbs */}
+          <nav className="flex items-center gap-2 text-sm font-medium text-slate-400 mb-6">
+            <Link href="/" className="hover:text-blue-600 transition-colors">Главная</Link>
+            <ChevronRight className="h-4 w-4 shrink-0" />
+            <span className="text-slate-900 font-bold">Доска заданий</span>
+          </nav>
 
-      {/* Title + create button */}
-      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
-        <h1 className="text-2xl font-bold text-foreground">Доска заданий</h1>
-        <Button asChild>
-          <Link href="/tasks/create">
-            <Plus className="h-4 w-4 mr-2" />
-            Создать задание
-          </Link>
-        </Button>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+              <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 tracking-tight mb-4">
+                Доска заданий
+              </h1>
+              <p className="text-lg text-slate-600 max-w-2xl">
+                Находите интересные заказы, предлагайте свои услуги и зарабатывайте вместе с «ГородОк».
+              </p>
+            </div>
+
+            <Button asChild className="h-12 md:h-14 px-8 rounded-2xl text-base font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:scale-[1.02] shadow-xl shadow-blue-500/20 transition-all shrink-0">
+              <Link href="/tasks/create">
+                <Plus className="h-5 w-5 mr-2" />
+                Создать задание
+              </Link>
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {/* Layout: filters + content */}
-      <div className="flex gap-6 items-start">
-        <Suspense>
-          <TaskFilters categories={categoriesRaw} districts={districts} />
-        </Suspense>
+      <div className="container mx-auto px-4 max-w-[1360px] py-4 pb-16">
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
 
-        <div className="flex-1 min-w-0">
-          {/* Sort + count */}
-          <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
-            <span className="text-sm text-muted-foreground">
-              {tasks.length > 0 && `${skip + 1}–${Math.min(skip + tasks.length, total)} из ${total}`}
-            </span>
-            <Suspense>
-              <TaskSortDropdown />
-            </Suspense>
+          {/* Filters Sidebar */}
+          <div className="w-full lg:w-[280px] shrink-0">
+            <div className="bg-white rounded-[2rem] border border-slate-200/60 shadow-sm p-6 lg:sticky lg:top-[140px]">
+              <Suspense>
+                <TaskFilters categories={categoriesRaw} districts={districts} />
+              </Suspense>
+            </div>
           </div>
 
-          {/* Grid of cards */}
-          {tasks.length === 0 ? (
-            <EmptyState
-              icon={<ClipboardList className="h-12 w-12" />}
-              title="Заданий пока нет"
-              description="Станьте первым — создайте задание, и исполнители откликнутся!"
-              action={
-                <Button asChild>
-                  <Link href="/tasks/create">Создать задание</Link>
-                </Button>
-              }
-            />
-          ) : (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                {tasks.map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    id={task.id}
-                    title={task.title}
-                    description={task.description}
-                    budget={task.budget}
-                    district={task.district}
-                    status={task.status}
-                    createdAt={task.createdAt}
-                    responsesCount={task._count.responses}
-                    client={task.client}
-                    category={task.category}
-                  />
-                ))}
-              </div>
+          {/* Main Content Area */}
+          <div className="flex-1 min-w-0">
 
-              {totalPages > 1 && (
-                <div className="mt-8">
-                  <PaginationControls
-                    page={page}
-                    totalPages={totalPages}
-                    searchParams={searchParams}
-                  />
+            {/* Meta bar */}
+            <div className="bg-white rounded-[2rem] border border-slate-200/60 shadow-sm px-6 py-4 flex flex-wrap items-center justify-between gap-4 mb-8">
+              <p className="font-bold text-slate-700">
+                {total > 0 ? (
+                  <>
+                    Найдено <span className="text-blue-600">{total}</span> заданий
+                  </>
+                ) : (
+                  'Задания не найдены'
+                )}
+              </p>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-bold text-slate-400 hidden sm:inline-block">Сортировка:</span>
+                <Suspense>
+                  <TaskSortDropdown />
+                </Suspense>
+              </div>
+            </div>
+
+            {/* Grid of cards */}
+            {tasks.length === 0 ? (
+              <EmptyState
+                icon={<ClipboardList className="h-16 w-16 text-slate-300" />}
+                title="Заданий пока нет"
+                description="Станьте первым — создайте задание, и исполнители откликнутся!"
+                action={
+                  <Button asChild className="rounded-xl font-bold bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 h-11 px-6">
+                    <Link href="/tasks/create">Создать задание</Link>
+                  </Button>
+                }
+              />
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {tasks.map((task) => (
+                    <TaskCard
+                      key={task.id}
+                      id={task.id}
+                      title={task.title}
+                      description={task.description}
+                      budget={task.budget}
+                      district={task.district}
+                      status={task.status}
+                      createdAt={task.createdAt}
+                      responsesCount={task._count.responses}
+                      client={task.client}
+                      category={task.category}
+                    />
+                  ))}
                 </div>
-              )}
-            </>
-          )}
+
+                {totalPages > 1 && (
+                  <div className="mt-12 bg-white rounded-2xl border border-slate-200/60 shadow-sm p-2 flex justify-center w-fit mx-auto">
+                    <PaginationControls
+                      page={page}
+                      totalPages={totalPages}
+                      searchParams={searchParams}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

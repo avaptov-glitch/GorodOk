@@ -9,9 +9,10 @@ import { cn } from '@/lib/utils'
 interface FavoriteButtonProps {
   executorId: string
   initialIsFavorited: boolean
+  className?: string
 }
 
-export function FavoriteButton({ executorId, initialIsFavorited }: FavoriteButtonProps) {
+export function FavoriteButton({ executorId, initialIsFavorited, className }: FavoriteButtonProps) {
   const [isFavorited, setIsFavorited] = useState(initialIsFavorited)
   const [isPending, startTransition] = useTransition()
 
@@ -34,7 +35,7 @@ export function FavoriteButton({ executorId, initialIsFavorited }: FavoriteButto
       variant="outline"
       size="lg"
       className={cn(
-        'w-full sm:w-auto gap-2',
+        className ?? 'w-full sm:w-auto gap-2',
         isFavorited && 'border-rose-300 text-rose-600 hover:bg-rose-50 hover:text-rose-600'
       )}
       onClick={handleClick}

@@ -7,7 +7,6 @@ import { prisma } from '@/lib/prisma'
 import { ExecutorCard } from '@/components/executor/executor-card'
 import { Filters } from '@/components/search/filters'
 import { SortDropdown } from '@/components/search/sort-dropdown'
-import { EmptyState } from '@/components/common/empty-state'
 import {
   Pagination,
   PaginationContent,
@@ -19,12 +18,9 @@ import {
 } from '@/components/ui/pagination'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { ChevronRight, Search, Users } from 'lucide-react'
-import { JsonLd } from '@/components/seo/json-ld'
-
+import { ChevronRight, Search, Users, SlidersHorizontal } from 'lucide-react'
 const PAGE_SIZE = 12
 const MAX_QUERY_LENGTH = 200
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
 type SearchPageParams = {
   q?: string
@@ -43,20 +39,17 @@ type SearchPageParams = {
   page?: string
 }
 
-// Очистка и ограничение поискового запроса
 function sanitizeQuery(raw?: string): string {
   if (!raw) return ''
   return raw.trim().replace(/\s+/g, ' ').slice(0, MAX_QUERY_LENGTH)
 }
 
-// Построение WHERE с текстовым поиском через OR + фильтры через AND
 function buildSearchWhere(query: string, params: SearchPageParams) {
   const where: Record<string, unknown> = {
     isPublished: true,
     moderationStatus: 'APPROVED',
   }
 
-  // Текстовый поиск по 5 полям
   if (query) {
     where.OR = [
       { user: { name: { contains: query, mode: 'insensitive' } } },
@@ -67,46 +60,18 @@ function buildSearchWhere(query: string, params: SearchPageParams) {
     ]
   }
 
-  // Фильтры — через AND чтобы не конфликтовать с OR
   const andConditions: Record<string, unknown>[] = []
 
-  if (params.city) {
-    andConditions.push({ user: { city: params.city } })
-  }
+  if (params.city) andConditions.push({ user: { city: params.city } })
+  if (params.rating) where.ratingAvg = { gte: parseFloat(params.rating) }
+  if (params.district) where.district = params.district
+  if (params.isVerified) where.isVerified = true
+  if (params.minExperience) where.experienceYears = { gte: parseInt(params.minExperience) }
+  if (params.online) where.worksOnline = true
+  if (params.travelsToClient) where.travelsToClient = true
+  if (params.acceptsAtOwnPlace) where.acceptsAtOwnPlace = true
+  if (params.hasPortfolio) where.portfolio = { some: {} }
 
-  if (params.rating) {
-    where.ratingAvg = { gte: parseFloat(params.rating) }
-  }
-
-  if (params.district) {
-    where.district = params.district
-  }
-
-  if (params.isVerified) {
-    where.isVerified = true
-  }
-
-  if (params.minExperience) {
-    where.experienceYears = { gte: parseInt(params.minExperience) }
-  }
-
-  if (params.online) {
-    where.worksOnline = true
-  }
-
-  if (params.travelsToClient) {
-    where.travelsToClient = true
-  }
-
-  if (params.acceptsAtOwnPlace) {
-    where.acceptsAtOwnPlace = true
-  }
-
-  if (params.hasPortfolio) {
-    where.portfolio = { some: {} }
-  }
-
-  // Фильтр по цене услуг (рубли → копейки)
   if (params.priceFrom || params.priceTo) {
     const servicePriceFilter: Record<string, unknown> = { isActive: true }
     if (params.priceFrom) servicePriceFilter.priceFrom = { gte: parseInt(params.priceFrom) * 100 }
@@ -124,18 +89,13 @@ function buildSearchWhere(query: string, params: SearchPageParams) {
   return where
 }
 
-// Сортировка (идентична category page)
 function buildOrderBy(sort: string) {
   switch (sort) {
-    case 'rating':
-      return [{ ratingAvg: 'desc' as const }, { reviewsCount: 'desc' as const }]
-    case 'reviews':
-      return [{ reviewsCount: 'desc' as const }, { ratingAvg: 'desc' as const }]
-    case 'newest':
-      return [{ createdAt: 'desc' as const }]
+    case 'rating': return [{ ratingAvg: 'desc' as const }, { reviewsCount: 'desc' as const }]
+    case 'reviews': return [{ reviewsCount: 'desc' as const }, { ratingAvg: 'desc' as const }]
+    case 'newest': return [{ createdAt: 'desc' as const }]
     case 'priceAsc':
-    case 'priceDesc':
-      return [{ ratingAvg: 'desc' as const }, { reviewsCount: 'desc' as const }]
+    case 'priceDesc': return [{ ratingAvg: 'desc' as const }, { reviewsCount: 'desc' as const }]
     case 'recommended':
     default:
       return [
@@ -146,7 +106,6 @@ function buildOrderBy(sort: string) {
   }
 }
 
-// URL пагинации с сохранением всех параметров
 function buildPageUrl(page: number, searchParams: SearchPageParams): string {
   const params = new URLSearchParams()
   Object.entries(searchParams).forEach(([k, v]) => {
@@ -172,17 +131,17 @@ function PaginationControls({
   for (let i = start; i <= end; i++) pages.push(i)
 
   return (
-    <Pagination>
-      <PaginationContent>
+    <Pagination className="mt-12">
+      <PaginationContent className="bg-white rounded-full px-2 py-1 shadow-sm border border-slate-200">
         {page > 1 && (
           <PaginationItem>
-            <PaginationPrevious href={buildPageUrl(page - 1, searchParams)} />
+            <PaginationPrevious href={buildPageUrl(page - 1, searchParams)} className="rounded-full hover:bg-slate-100 font-medium" />
           </PaginationItem>
         )}
         {start > 1 && (
           <>
             <PaginationItem>
-              <PaginationLink href={buildPageUrl(1, searchParams)}>1</PaginationLink>
+              <PaginationLink href={buildPageUrl(1, searchParams)} className="rounded-full">1</PaginationLink>
             </PaginationItem>
             {start > 2 && (
               <PaginationItem>
@@ -193,7 +152,11 @@ function PaginationControls({
         )}
         {pages.map((p) => (
           <PaginationItem key={p}>
-            <PaginationLink href={buildPageUrl(p, searchParams)} isActive={p === page}>
+            <PaginationLink
+              href={buildPageUrl(p, searchParams)}
+              isActive={p === page}
+              className={`rounded-full font-bold ${p === page ? 'bg-slate-900 text-white hover:bg-slate-800' : 'hover:bg-slate-100 text-slate-600'}`}
+            >
               {p}
             </PaginationLink>
           </PaginationItem>
@@ -206,7 +169,7 @@ function PaginationControls({
               </PaginationItem>
             )}
             <PaginationItem>
-              <PaginationLink href={buildPageUrl(totalPages, searchParams)}>
+              <PaginationLink href={buildPageUrl(totalPages, searchParams)} className="rounded-full">
                 {totalPages}
               </PaginationLink>
             </PaginationItem>
@@ -214,7 +177,7 @@ function PaginationControls({
         )}
         {page < totalPages && (
           <PaginationItem>
-            <PaginationNext href={buildPageUrl(page + 1, searchParams)} />
+            <PaginationNext href={buildPageUrl(page + 1, searchParams)} className="rounded-full hover:bg-slate-100 font-medium" />
           </PaginationItem>
         )}
       </PaginationContent>
@@ -252,7 +215,6 @@ export default async function SearchPage({
   const page = Math.max(1, parseInt(searchParams.page ?? '1'))
   const skip = (page - 1) * PAGE_SIZE
 
-  // Определяем, нужно ли делать запрос
   const filterKeys = [
     'sort', 'city', 'rating', 'priceFrom', 'priceTo', 'district',
     'hasPortfolio', 'isVerified', 'minExperience', 'online',
@@ -261,50 +223,44 @@ export default async function SearchPage({
   const hasFilters = filterKeys.some((k) => searchParams[k])
   const shouldSearch = query.length > 0 || hasFilters
 
-  // Запрос к БД только если есть поисковый запрос или фильтры
   if (!shouldSearch) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <JsonLd
-          data={{
-            '@context': 'https://schema.org',
-            '@type': 'SearchResultsPage',
-            name: 'Поиск исполнителей',
-            url: `${SITE_URL}/search`,
-          }}
-        />
+      <div className="min-h-[80vh] bg-[#F8FAFC]">
+        <div className="container mx-auto px-4 max-w-[1360px] py-12">
+          {/* Top minimal header */}
+          <nav className="flex items-center gap-2 text-sm font-semibold text-slate-400 mb-8">
+            <Link href="/" className="hover:text-blue-600 transition-colors">Главная</Link>
+            <ChevronRight className="h-4 w-4 shrink-0" />
+            <span className="text-slate-900">Поиск</span>
+          </nav>
 
-        <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-6 flex-wrap">
-          <Link href="/" className="hover:text-foreground transition-colors">
-            Главная
-          </Link>
-          <ChevronRight className="h-3.5 w-3.5 shrink-0" />
-          <span className="text-foreground font-medium">Поиск</span>
-        </nav>
+          <div className="max-w-3xl mx-auto mt-16 text-center">
+            <div className="w-24 h-24 bg-blue-50 text-blue-600 rounded-[2rem] flex items-center justify-center shadow-inner mx-auto mb-8 border border-blue-100">
+              <Search className="h-10 w-10" />
+            </div>
+            <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-[-0.03em] mb-4">
+              Поиск специалистов
+            </h1>
+            <p className="text-xl font-medium text-slate-500 mb-10">
+              Более 100,000 мастеров готовы помочь. Введите запрос.
+            </p>
 
-        <div className="mb-5">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">
-            Поиск исполнителей
-          </h1>
-        </div>
-
-        <form action="/search" method="get" className="mb-6 max-w-2xl">
-          <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-            <Input
-              name="q"
-              type="search"
-              placeholder="Найти мастера или услугу..."
-              className="pl-10 h-11 text-base"
-            />
+            <form action="/search" method="get" className="relative group">
+              <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none">
+                <Search className="h-6 w-6 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+              </div>
+              <Input
+                name="q"
+                type="search"
+                placeholder="Например: ремонт квартир, репетитор по английскому..."
+                className="w-full pl-16 pr-6 py-8 h-auto rounded-[2.5rem] bg-white border-2 border-slate-200 text-xl font-semibold placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.06)] transition-all"
+              />
+              <Button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white rounded-full px-8 h-[calc(100%-24px)] text-lg font-bold">
+                Найти
+              </Button>
+            </form>
           </div>
-        </form>
-
-        <EmptyState
-          icon={<Search className="h-16 w-16" />}
-          title="Введите запрос для поиска"
-          description="Найдите исполнителей по имени, услуге или категории"
-        />
+        </div>
       </div>
     )
   }
@@ -330,9 +286,7 @@ export default async function SearchPage({
         travelsToClient: true,
         avgResponseTimeMinutes: true,
         user: { select: { name: true, avatarUrl: true, lastSeenAt: true } },
-        categories: {
-          include: { category: { select: { name: true } } },
-        },
+        categories: { include: { category: { select: { name: true } } } },
         services: {
           where: { isActive: true },
           orderBy: { priceFrom: 'asc' },
@@ -349,13 +303,8 @@ export default async function SearchPage({
     prisma.executorProfile.count({ where }),
   ])
 
-  // Районы для фильтра
   const districtsRaw = await prisma.executorProfile.findMany({
-    where: {
-      isPublished: true,
-      moderationStatus: 'APPROVED',
-      district: { not: null },
-    },
+    where: { isPublished: true, moderationStatus: 'APPROVED', district: { not: null } },
     select: { district: true },
     distinct: ['district'],
   })
@@ -364,121 +313,110 @@ export default async function SearchPage({
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <JsonLd
-        data={{
-          '@context': 'https://schema.org',
-          '@type': 'SearchResultsPage',
-          name: query ? `Поиск: ${query}` : 'Поиск исполнителей',
-          url: `${SITE_URL}/search${query ? `?q=${encodeURIComponent(query)}` : ''}`,
-        }}
-      />
+    <div className="min-h-screen bg-[#F8FAFC]">
+      {/* Header Search Band */}
+      <div className="bg-white border-b border-slate-200/60 pt-6 pb-6 sticky top-0 z-40 bg-white/80 backdrop-blur-xl">
+        <div className="container mx-auto px-4 max-w-[1360px]">
+          <nav className="flex items-center gap-2 text-sm font-semibold text-slate-400 mb-4">
+            <Link href="/" className="hover:text-blue-600 transition-colors">Главная</Link>
+            <ChevronRight className="h-4 w-4 shrink-0" />
+            <span className="text-slate-900">Поиск</span>
+          </nav>
 
-      {/* Хлебные крошки */}
-      <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-6 flex-wrap">
-        <Link href="/" className="hover:text-foreground transition-colors">
-          Главная
-        </Link>
-        <ChevronRight className="h-3.5 w-3.5 shrink-0" />
-        <span className="text-foreground font-medium">Поиск</span>
-      </nav>
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-[-0.02em] shrink-0">
+              {query ? `Результаты: «${query}»` : 'Все специалисты'}
+            </h1>
 
-      {/* Заголовок */}
-      <div className="mb-5">
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">
-          {query ? `Результаты поиска: «${query}»` : 'Поиск исполнителей'}
-        </h1>
-        <p className="text-muted-foreground text-sm">
-          {total > 0
-            ? `Найдено ${total} исполнител${total === 1 ? 'ь' : total < 5 ? 'я' : 'ей'}`
-            : 'По вашему запросу ничего не найдено'}
-        </p>
+            <form action="/search" method="get" className="w-full max-w-2xl relative group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+              <Input
+                name="q"
+                type="search"
+                defaultValue={query}
+                placeholder="Что будем искать?"
+                className="w-full pl-12 pr-4 h-14 rounded-full bg-slate-100/50 hover:bg-slate-100 focus:bg-white border-transparent focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 text-base font-medium transition-all shadow-sm"
+              />
+            </form>
+          </div>
+        </div>
       </div>
 
-      {/* Строка поиска на странице */}
-      <form action="/search" method="get" className="mb-6 max-w-2xl">
-        <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-          <Input
-            name="q"
-            type="search"
-            defaultValue={query}
-            placeholder="Найти мастера или услугу..."
-            className="pl-10 h-11 text-base"
-          />
-        </div>
-      </form>
-
-      {/* Нет результатов */}
-      {total === 0 && (
-        <EmptyState
-          icon={<Users className="h-16 w-16" />}
-          title="Ничего не найдено"
-          description="Попробуйте изменить запрос или ослабить фильтры"
-          action={
-            <Button variant="outline" asChild>
-              <Link href="/categories">Посмотреть категории</Link>
+      <div className="container mx-auto px-4 max-w-[1360px] py-8">
+        {total === 0 ? (
+          <div className="bg-white rounded-[2.5rem] border border-slate-200/60 p-16 text-center shadow-sm">
+            <div className="w-24 h-24 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Users className="h-10 w-10" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">Ничего не найдено</h2>
+            <p className="text-slate-500 font-medium mb-8 max-w-md mx-auto">
+              Мы не нашли специалистов точно по вашему запросу. Попробуйте изменить фильтры или написать иначе.
+            </p>
+            <Button asChild className="rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold h-12 px-8">
+              <Link href="/categories">Открыть каталог категорий</Link>
             </Button>
-          }
-        />
-      )}
-
-      {/* Результаты */}
-      {total > 0 && (
-        <div className="flex gap-6 items-start">
-          {/* Фильтры */}
-          <Suspense>
-            <Filters districts={districts} />
-          </Suspense>
-
-          {/* Основной контент */}
-          <div className="flex-1 min-w-0">
-            {/* Панель: кол-во + сортировка */}
-            <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
-              <span className="text-sm text-muted-foreground">
-                {executors.length > 0 && `${executors.length} из ${total}`}
-              </span>
-              <Suspense>
-                <SortDropdown />
-              </Suspense>
+          </div>
+        ) : (
+          <div className="flex flex-col lg:flex-row gap-8 items-start">
+            {/* Filters Sidebar */}
+            <div className="w-full lg:w-[280px] shrink-0">
+              <div className="bg-white rounded-[2rem] border border-slate-200/60 shadow-sm p-6 sticky top-[140px]">
+                <div className="flex items-center gap-2 font-black text-lg text-slate-900 mb-6">
+                  <SlidersHorizontal className="h-5 w-5 text-blue-600" />
+                  Фильтры
+                </div>
+                <Suspense fallback={<div className="h-[400px] bg-slate-50 animate-pulse rounded-xl"></div>}>
+                  <Filters districts={districts} />
+                </Suspense>
+              </div>
             </div>
 
-            {/* Сетка исполнителей */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-              {executors.map((executor) => (
-                <ExecutorCard
-                  key={executor.id}
-                  id={executor.id}
-                  user={executor.user}
-                  ratingAvg={executor.ratingAvg}
-                  reviewsCount={executor.reviewsCount}
-                  isVerified={executor.isVerified}
-                  isPro={executor.isPro}
-                  district={executor.district}
-                  worksOnline={executor.worksOnline}
-                  acceptsAtOwnPlace={executor.acceptsAtOwnPlace}
-                  travelsToClient={executor.travelsToClient}
-                  avgResponseTimeMinutes={executor.avgResponseTimeMinutes}
-                  services={executor.services}
-                  categories={executor.categories}
-                  portfolio={executor.portfolio}
-                />
-              ))}
-            </div>
+            {/* Main Content */}
+            <div className="flex-1 min-w-0">
+              {/* Meta Panel */}
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-6 bg-white rounded-2xl p-3 px-5 border border-slate-200/60 shadow-sm">
+                <span className="font-bold text-slate-600">
+                  Показано <span className="text-slate-900">{executors.length}</span> из <span className="text-slate-900">{total}</span>
+                </span>
+                <Suspense>
+                  <SortDropdown />
+                </Suspense>
+              </div>
 
-            {/* Пагинация */}
-            {totalPages > 1 && (
-              <div className="mt-8">
+              {/* Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
+                {executors.map((executor) => (
+                  <ExecutorCard
+                    key={executor.id}
+                    id={executor.id}
+                    user={executor.user}
+                    ratingAvg={executor.ratingAvg}
+                    reviewsCount={executor.reviewsCount}
+                    isVerified={executor.isVerified}
+                    isPro={executor.isPro}
+                    district={executor.district}
+                    worksOnline={executor.worksOnline}
+                    acceptsAtOwnPlace={executor.acceptsAtOwnPlace}
+                    travelsToClient={executor.travelsToClient}
+                    avgResponseTimeMinutes={executor.avgResponseTimeMinutes}
+                    services={executor.services}
+                    categories={executor.categories}
+                    portfolio={executor.portfolio}
+                  />
+                ))}
+              </div>
+
+              {totalPages > 1 && (
                 <PaginationControls
                   page={page}
                   totalPages={totalPages}
                   searchParams={searchParams}
                 />
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }

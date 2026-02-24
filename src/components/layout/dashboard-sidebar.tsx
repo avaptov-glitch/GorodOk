@@ -97,19 +97,19 @@ export function DashboardSidebar() {
     role === 'ADMIN' ? adminMenuItems : role === 'EXECUTOR' ? executorMenuItems : clientMenuItems
 
   return (
-    <aside className="hidden md:flex flex-col w-60 min-h-[calc(100vh-4rem)] border-r border-border bg-card shrink-0">
+    <aside className="hidden md:flex flex-col w-64 min-h-[calc(100vh-4rem)] border-r border-slate-200/60 bg-white shadow-[4px_0_24px_-12px_rgba(0,0,0,0.05)] shrink-0 z-10">
       {/* Информация о пользователе */}
-      <div className="p-4 border-b">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+      <div className="p-6 border-b border-slate-100">
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">
           {roleLabels[role] ?? role}
         </p>
-        <p className="text-sm font-semibold text-foreground truncate mt-0.5">
+        <p className="text-base font-extrabold text-slate-900 truncate">
           {session.user.name}
         </p>
       </div>
 
       {/* Навигация */}
-      <nav className="flex-1 p-3 space-y-0.5">
+      <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
         {menuItems.map(({ href, label, icon: Icon }) => {
           // Считаем ссылку активной если путь совпадает или начинается с href
           const isActive = pathname === href || pathname.startsWith(href + '/')
@@ -120,16 +120,16 @@ export function DashboardSidebar() {
               key={href}
               href={href}
               className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition-all duration-200',
                 isActive
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  ? 'bg-blue-50/80 text-blue-700 shadow-sm shadow-blue-100/50'
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
               )}
             >
-              <Icon className="h-4 w-4 shrink-0" />
+              <Icon className={cn('h-[18px] w-[18px] shrink-0', isActive ? 'text-blue-600' : 'text-slate-400')} />
               <span className="flex-1">{label}</span>
               {isChatLink && unreadChatCount > 0 && (
-                <span className="flex items-center justify-center min-w-[20px] h-5 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold px-1.5">
+                <span className="flex items-center justify-center min-w-[22px] h-[22px] rounded-full bg-rose-500 text-white text-[11px] font-extrabold px-1.5 shadow-sm shadow-rose-500/20">
                   {unreadChatCount > 99 ? '99+' : unreadChatCount}
                 </span>
               )}

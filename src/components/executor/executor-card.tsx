@@ -1,9 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { Star, MapPin, CheckCircle, Briefcase, Zap } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+import { Star, MapPin, Briefcase, Zap, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 type PriceType = 'FIXED' | 'FROM' | 'RANGE' | 'NEGOTIABLE' | 'PER_HOUR'
@@ -81,129 +79,134 @@ export function ExecutorCard({
   const respondsQuickly = avgResponseTimeMinutes != null && avgResponseTimeMinutes <= 60
 
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow duration-200 flex flex-col">
-      <CardContent className="p-0 flex flex-col flex-1">
-        {/* Portfolio preview image */}
-        {portfolio.length > 0 && (
-          <div className="relative h-32 bg-muted shrink-0">
-            <Image
-              src={portfolio[0].imageUrl}
-              alt="Портфолио"
-              fill
-              className="object-cover"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            />
-          </div>
-        )}
+    <div className="bg-white rounded-[2rem] overflow-hidden border border-slate-200/60 shadow-sm ring-1 ring-slate-900/5 hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(0,0,0,0.06)] hover:border-blue-200 transition-all duration-400 flex flex-col group h-full">
+      {/* Portfolio Header Image */}
+      {portfolio.length > 0 ? (
+        <div className="relative h-36 bg-slate-100 shrink-0 overflow-hidden">
+          <Image
+            src={portfolio[0].imageUrl}
+            alt="Портфолио"
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+        </div>
+      ) : (
+        <div className="h-20 bg-gradient-to-r from-blue-50 to-indigo-50 shrink-0"></div>
+      )}
 
-        <div className="p-4 space-y-3 flex flex-col flex-1">
-          {/* Header: avatar + name + rating */}
-          <div className="flex items-start gap-3">
-            <div className="relative shrink-0">
-              <Avatar className="h-12 w-12">
-                <AvatarImage src={user.avatarUrl ?? undefined} />
-                <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              {online && (
-                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-card rounded-full" />
-              )}
+      {/* Main Content Area */}
+      <div className="p-6 pt-0 flex flex-col flex-1 relative">
+        {/* Avatar (Overlapping Image) */}
+        <div className="relative shrink-0 -mt-10 mb-3 flex items-end justify-between">
+          <div className="relative inline-block">
+            <Avatar className="h-20 w-20 ring-4 ring-white shadow-md">
+              <AvatarImage src={user.avatarUrl ?? undefined} className="object-cover" />
+              <AvatarFallback className="bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700 text-xl font-bold">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            {online && (
+              <span className="absolute bottom-1 right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full shadow-sm" />
+            )}
+          </div>
+
+          {/* Quick Stats Pill */}
+          {reviewsCount > 0 && (
+            <div className="mb-2 bg-white/90 backdrop-blur-sm shadow-sm ring-1 ring-slate-200/50 rounded-full px-3 py-1 flex items-center gap-1.5 transform translate-y-1">
+              <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+              <span className="text-sm font-bold text-slate-900">{ratingAvg.toFixed(2)}</span>
+              <span className="text-xs font-semibold text-slate-400">({reviewsCount})</span>
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <h3 className="font-semibold text-foreground truncate">{user.name}</h3>
-                {isVerified && (
-                  <CheckCircle
-                    className="h-4 w-4 text-primary shrink-0"
-                    aria-label="Верифицирован"
-                  />
-                )}
-                {isPro && (
-                  <Badge variant="secondary" className="text-xs px-1.5 py-0 h-5">
-                    PRO
-                  </Badge>
-                )}
+          )}
+        </div>
+
+        {/* User Info & Badges */}
+        <div className="flex-1 min-w-0 flex flex-col">
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <h3 className="text-xl font-bold text-slate-900 tracking-tight leading-tight group-hover:text-blue-600 transition-colors">
+              <Link href={`/executor/${id}`} className="before:absolute before:inset-0 block truncate">
+                {user.name}
+              </Link>
+            </h3>
+            {isVerified && (
+              <ShieldCheck className="h-5 w-5 text-blue-500 shrink-0" aria-label="Проверен" />
+            )}
+            {isPro && (
+              <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider shadow-sm">
+                PRO
               </div>
-              {/* Trust badges */}
-              {(isTopSpecialist || respondsQuickly) && (
-                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                  {isTopSpecialist && (
-                    <Badge className="text-[10px] px-1.5 py-0 h-4 bg-amber-500/10 text-amber-700 border-amber-300 hover:bg-amber-500/20">
-                      Топ
-                    </Badge>
-                  )}
-                  {respondsQuickly && (
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 text-green-700 border-green-300">
-                      <Zap className="h-2.5 w-2.5 mr-0.5" />
-                      Быстро отвечает
-                    </Badge>
-                  )}
-                </div>
-              )}
-              <p className="text-sm text-muted-foreground truncate">
-                {categories.map((c) => c.category.name).join(', ')}
-              </p>
-              {reviewsCount > 0 ? (
-                <div className="flex items-center gap-1 mt-0.5">
-                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                  <span className="text-sm font-medium">{ratingAvg.toFixed(2)}</span>
-                  <span className="text-sm text-muted-foreground">({reviewsCount})</span>
-                </div>
-              ) : (
-                <span className="text-xs text-muted-foreground mt-0.5 block">Нет отзывов</span>
-              )}
-            </div>
+            )}
+          </div>
+
+          <p className="text-sm font-medium text-slate-500 mb-3 line-clamp-1">
+            {categories.map((c) => c.category.name).join(', ')}
+          </p>
+
+          <div className="flex flex-wrap gap-2 mb-4">
+            {isTopSpecialist && (
+              <div className="bg-amber-50 text-amber-700 border border-amber-200/50 text-xs font-bold px-2.5 py-1 rounded-full flex items-center shadow-sm">
+                Топ мастер
+              </div>
+            )}
+            {respondsQuickly && (
+              <div className="bg-emerald-50 text-emerald-700 border border-emerald-200/50 text-xs font-bold px-2.5 py-1 rounded-full flex items-center shadow-sm">
+                <Zap className="h-3 w-3 mr-1 fill-emerald-500" /> Быстро отвечает
+              </div>
+            )}
           </div>
 
           {/* Location */}
           {(district || worksOnline || travelsToClient || acceptsAtOwnPlace) && (
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <MapPin className="h-3.5 w-3.5 shrink-0" />
+            <div className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-4 bg-slate-50 rounded-xl p-2.5 ring-1 ring-slate-100">
+              <MapPin className="h-4 w-4 shrink-0 text-blue-500" />
               <span className="truncate">
                 {[district, worksOnline ? 'Онлайн' : null, travelsToClient ? 'Выезд' : null, acceptsAtOwnPlace ? 'У себя' : null].filter(Boolean).join(' · ')}
               </span>
             </div>
           )}
 
-          {/* Services preview */}
-          {services.length > 0 && (
-            <div className="space-y-1">
-              {services.slice(0, 2).map((service, i) => (
-                <div key={i} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="text-muted-foreground truncate">{service.name}</span>
-                  <span className="font-medium text-foreground shrink-0">
-                    {formatPrice(service.priceFrom, service.priceType)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
+          {/* Services Section */}
+          <div className="mt-auto pt-2">
+            {services.length > 0 ? (
+              <div className="space-y-2 mb-4">
+                {services.slice(0, 2).map((service, i) => (
+                  <div key={i} className="flex justify-between items-center text-sm group/service">
+                    <span className="text-slate-600 font-medium truncate pr-4 group-hover/service:text-slate-900 transition-colors">{service.name}</span>
+                    <span className="font-bold text-slate-900 shrink-0 bg-slate-100 px-2 py-0.5 rounded-md">
+                      {formatPrice(service.priceFrom, service.priceType)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mb-4 text-sm font-medium text-slate-400 flex items-center gap-1.5">
+                <Briefcase className="h-4 w-4" /> Прайс-лист не заполнен
+              </div>
+            )}
+          </div>
 
-          {/* Spacer to push footer down */}
-          <div className="flex-1" />
-
-          {/* Min price + CTA */}
-          <div className="flex items-center justify-between pt-1 border-t border-border">
+          {/* Bottom Action Area */}
+          <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
             {minPriceService ? (
-              <div className="text-sm">
-                <span className="text-muted-foreground">Услуги </span>
-                <span className="font-semibold text-foreground">
+              <div className="flex flex-col">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Услуги</span>
+                <span className="text-lg font-black text-blue-600">
                   {formatPrice(minPriceService.priceFrom, minPriceService.priceType)}
                 </span>
               </div>
             ) : (
-              <span className="text-sm text-muted-foreground flex items-center gap-1">
-                <Briefcase className="h-3.5 w-3.5" />
-                Нет услуг
-              </span>
+              <div></div>
             )}
-            <Button size="sm" asChild>
-              <Link href={`/executor/${id}`}>Подробнее</Link>
+            <Button
+              className="rounded-full bg-slate-900 hover:bg-blue-600 text-white font-bold px-6 shadow-md hover:shadow-lg transition-all z-10 relative pointer-events-none group-hover:bg-blue-600"
+            >
+              Перейти
             </Button>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
